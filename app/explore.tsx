@@ -1,9 +1,10 @@
 import { View, Text } from 'react-native';
 
-export default function ModalScreen() {
+export default function TabTwoScreen() {
   return (
     <View>
-      <Text>Hej</Text>
+      <Text>Explore</Text>
     </View>
   );
 }
+
