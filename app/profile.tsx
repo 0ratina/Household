@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
+import { router } from "expo-router";
 
 
 export default function ProfileScreen() {
@@ -71,13 +72,20 @@ export default function ProfileScreen() {
                 <ActionButton
                     icon="add-circle-outline"
                     label="Spara"
-                    onPress={onSave}
                     dividerRight
+                    onPress={() => {
+                        onSave();
+                        router.replace("/");
+                    }}
                 />
+
                 <ActionButton
                     icon="close-circle-outline"
                     label="Stäng"
-                    onPress={onClose}
+                    onPress={() => {
+                        onClose();
+                        router.replace("/");
+                    }}
                 />
             </View>
         </View>
