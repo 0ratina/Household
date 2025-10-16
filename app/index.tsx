@@ -14,6 +14,9 @@ export default function HomeScreen() {
          <Link href='/househould' asChild>
             <Button title='hushåll' />
          </Link>
+         <Link href='/createhousehold' asChild>
+            <Button title='skapa hushåll ' />
+         </Link>
       </View>
    )
 }
