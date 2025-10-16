@@ -6,6 +6,7 @@ export default function RootLayout() {
   return (
     <>
       <Stack>
+        <Stack.Screen name="profile" options={{ title: 'profile' }} />
         <Stack.Screen name="index" options={{ title: 'index' }} />
         <Stack.Screen name="modal" options={{ title: 'Modal' }} />
         <Stack.Screen name="explore" options={{ title: 'explore' }} />

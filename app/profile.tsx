@@ -10,9 +10,10 @@ import {
     Platform
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 
 
-function ProfileScreen() {
+export default function ProfileScreen() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
@@ -23,6 +24,7 @@ function ProfileScreen() {
     const onClose = () => {
         console.log("Stäng");
     };
+
     return (
         <View style={styles.container}>
 
@@ -80,10 +82,13 @@ function ProfileScreen() {
             </View>
         </View>
     );
+
 }
 
+type IconName = ComponentProps<typeof Ionicons>["name"];
+
 type ActionButtonProps = {
-    icon: string;
+    icon: IconName;
     label: string;
     onPress: () => void;
     dividerRight?: boolean;
