@@ -75,7 +75,7 @@ export default function ProfileScreen() {
                     dividerRight
                     onPress={() => {
                         onSave();
-                        router.replace("/");
+                        router.back()
                     }}
                 />
 
@@ -84,7 +84,7 @@ export default function ProfileScreen() {
                     label="Stäng"
                     onPress={() => {
                         onClose();
-                        router.replace("/");
+                        router.back();
                     }}
                 />
             </View>
@@ -116,9 +116,8 @@ function ActionButton({ icon, label, onPress, dividerRight }: ActionButtonProps)
     );
 }
 
-const PURPLE = "#5F52FF";
+const profileColor = "#5F52FF";
 const BG = "#EFEFEF";
-const CARD = "#FFFFFF";
 
 const styles = StyleSheet.create({
     safe: {
@@ -130,11 +129,11 @@ const styles = StyleSheet.create({
         backgroundColor: BG,
     },
     header: {
-        backgroundColor: CARD,
+        backgroundColor: "#FFFFFF",
         paddingVertical: 16,
         alignItems: "center",
         justifyContent: "center",
-        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomWidth: 0.5,
         borderBottomColor: "rgba(0,0,0,0.06)",
     },
     headerTitle: {
@@ -156,13 +155,13 @@ const styles = StyleSheet.create({
         height: 140,
         borderRadius: 70,
         borderWidth: 2,
-        borderColor: PURPLE,
+        borderColor: profileColor,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "#FFFFFF",
     },
     inputCard: {
-        backgroundColor: CARD,
+        backgroundColor: "#FFFFFF",
         borderRadius: 14,
         paddingHorizontal: 16,
         paddingVertical: 14,
@@ -179,9 +178,9 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: CARD,
+        backgroundColor: "#FFFFFF",
         flexDirection: "row",
-        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopWidth: 0.5,
         borderTopColor: "rgba(0,0,0,0.08)",
     },
     action: {
@@ -192,7 +191,7 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
     },
     actionDivider: {
-        borderRightWidth: StyleSheet.hairlineWidth,
+        borderRightWidth: 0.5,
         borderRightColor: "rgba(0,0,0,0.08)",
     },
     actionLabel: {
