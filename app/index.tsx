@@ -23,6 +23,9 @@ export default function HomeScreen() {
          <Link href='/createtask' asChild>
             <Button title='Skapa en ny syssla' />
          </Link>
+         <Link href='/updateTask' asChild>
+            <Button title='Ändra syssla' />
+         </Link>
       </View>
    )
 }

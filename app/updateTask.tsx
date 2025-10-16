@@ -21,14 +21,14 @@ const Pill = ({ label, tone = "default", onPress }: PillProps) => {
     );
 };
 
-export default function NewTaskScreen() {
+export default function UpdateTaskScreen() {
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
     const [repeatDay, setRepeatDay] = useState(1);
     const [value, setValue] = useState(1);
 
-    const onSave = () => {
-        console.log("Spara", { title, desc, repeatDay, value });
+    const onUpdate = () => {
+        console.log("Ändra", { title, desc, repeatDay, value });
         router.back();
     };
 
@@ -92,9 +92,9 @@ export default function NewTaskScreen() {
                 </ScrollView>
             </KeyboardAvoidingView>
             <View style={styles.bottomBar}>
-                <TouchableOpacity style={[styles.action, styles.actionDivider]} activeOpacity={0.8} onPress={onSave}>
+                <TouchableOpacity style={[styles.action, styles.actionDivider]} activeOpacity={0.8} onPress={onUpdate}>
                     <Ionicons name="add-circle-outline" size={22} style={{ marginRight: 10 }} />
-                    <Text style={styles.actionLabel}>Spara</Text>
+                    <Text style={styles.actionLabel}>Ändra</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.action} activeOpacity={0.8} onPress={onClose}>
