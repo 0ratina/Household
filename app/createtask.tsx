@@ -1,13 +1,14 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet } from "react-native";
 
-type PillProps = { label: string | number; tone?: "default" | "danger" | "muted"; onPress?: () => void };
+type PillProps = { label: string | number; tone?: "default" | "repeat" | "muted"; onPress?: () => void };
 
 const Pill = ({ label, tone = "default", onPress }: PillProps) => {
     const toneStyle =
-        tone === "danger"
-            ? styles.pillDanger
+        tone === "repeat"
+            ? styles.pillRepeat
             : tone === "muted"
                 ? styles.pillMuted
                 : styles.pillDefault;
@@ -72,7 +73,7 @@ export default function NewTaskScreen() {
                         <View style={styles.rowRight}>
                             <Text style={styles.subtle}>var</Text>
                             <Pill
-                                tone="danger"
+                                tone="repeat"
                                 label={repeatDay}
                                 onPress={() => setRepeatDay((n) => (n >= 30 ? 1 : n + 1))}
                             />
@@ -107,3 +108,113 @@ export default function NewTaskScreen() {
         </View>
     );
 }
+
+const BG = "#EFEFEF";
+const MUTED_BG = "#EFEFEF";
+const REPEAT = "#C54B53";
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: BG },
+    content: {
+        padding: 16,
+        paddingBottom: 120,
+    },
+
+    card: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: 14,
+        marginBottom: 14,
+
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 3,
+    },
+
+    screenTitle: {
+        fontSize: 22,
+        fontWeight: "700",
+    },
+
+    input: {
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 16,
+    },
+    textarea: {
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        minHeight: 120,
+        fontSize: 16,
+    },
+
+    rowBetween: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+    },
+    rowLabel: {
+        fontSize: 16,
+        fontWeight: "700",
+    },
+    rowRight: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+    subtle: {
+        fontSize: 15,
+        color: "#555",
+        marginHorizontal: 4,
+    },
+    helper: {
+        fontSize: 13,
+        color: "#7A7A7A",
+    },
+
+    pill: {
+        minWidth: 28,
+        height: 28,
+        borderRadius: 14,
+        paddingHorizontal: 10,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    pillText: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#fff",
+    },
+    pillRepeat: { backgroundColor: REPEAT },
+    pillDefault: { backgroundColor: "#333" },
+    pillMuted: { backgroundColor: MUTED_BG, borderWidth: 1, borderColor: "rgba(0,0,0,0.08)" },
+
+    bottomBar: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "#FFFFFF",
+        flexDirection: "row",
+        borderTopWidth: 0.5,
+        borderTopColor: "rgba(0,0,0,0.08)",
+    },
+    action: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 16,
+    },
+    actionDivider: {
+        borderRightWidth: 0.5,
+        borderRightColor: "rgba(0,0,0,0.08)",
+    },
+    actionLabel: {
+        fontSize: 16,
+        fontWeight: "600",
+    },
+});
