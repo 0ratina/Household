@@ -102,3 +102,88 @@ function ActionButton({ icon, label, onPress, dividerRight }: ActionButtonProps)
         </TouchableOpacity>
     );
 }
+
+const PURPLE = "#5F52FF";
+const BG = "#EFEFEF";
+const CARD = "#FFFFFF";
+
+const styles = StyleSheet.create({
+    safe: {
+        flex: 1,
+        backgroundColor: BG,
+    },
+    container: {
+        flex: 1,
+        backgroundColor: BG,
+    },
+    header: {
+        backgroundColor: CARD,
+        paddingVertical: 16,
+        alignItems: "center",
+        justifyContent: "center",
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: "rgba(0,0,0,0.06)",
+    },
+    headerTitle: {
+        fontSize: 22,
+        fontWeight: "600",
+        letterSpacing: 0.3,
+    },
+    content: {
+        paddingHorizontal: 20,
+        paddingTop: 24,
+        paddingBottom: 120,
+    },
+    avatarWrap: {
+        alignItems: "center",
+        marginBottom: 22,
+    },
+    avatarCircle: {
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        borderWidth: 2,
+        borderColor: PURPLE,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#FFFFFF",
+    },
+    inputCard: {
+        backgroundColor: CARD,
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 16,
+        marginBottom: 14,
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 3,
+    },
+    bottomBar: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: CARD,
+        flexDirection: "row",
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: "rgba(0,0,0,0.08)",
+    },
+    action: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 16,
+    },
+    actionDivider: {
+        borderRightWidth: StyleSheet.hairlineWidth,
+        borderRightColor: "rgba(0,0,0,0.08)",
+    },
+    actionLabel: {
+        fontSize: 16,
+        fontWeight: "600",
+    },
+});
