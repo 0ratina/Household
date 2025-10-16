@@ -14,13 +14,10 @@ export default function HomeScreen() {
          <Link href='/househould' asChild>
             <Button title='hushåll' />
          </Link>
-<<<<<<< HEAD
          <Link href='/createhousehold' asChild>
             <Button title='skapa hushåll ' />
-         <Link href="/profile">
-=======
+         </Link>
          <Link href='/profile' asChild>
->>>>>>> ae80ad067852fc0da591c536a9c43b70b99ea970
             <Button title='profile' />
          </Link>
       </View>
