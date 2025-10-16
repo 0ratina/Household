@@ -20,7 +20,7 @@ export default function HomeScreen() {
          <Link href='/profile' asChild>
             <Button title='Profil' />
          </Link>
-         <Link href='/createtask' asChild>
+         <Link href='/createTask' asChild>
             <Button title='Skapa en ny syssla' />
          </Link>
       </View>
