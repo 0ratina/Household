@@ -93,6 +93,17 @@ export default function NewTaskScreen() {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+            <View style={styles.bottomBar}>
+                <TouchableOpacity style={[styles.action, styles.actionDivider]} activeOpacity={0.8} onPress={onSave}>
+                    <Ionicons name="add-circle-outline" size={22} style={{ marginRight: 10 }} />
+                    <Text style={styles.actionLabel}>Spara</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.action} activeOpacity={0.8} onPress={onClose}>
+                    <Ionicons name="close-circle-outline" size={22} style={{ marginRight: 10 }} />
+                    <Text style={styles.actionLabel}>Stäng</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
