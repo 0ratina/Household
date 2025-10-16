@@ -18,7 +18,10 @@ export default function HomeScreen() {
             <Button title='skapa hushåll ' />
          </Link>
          <Link href='/profile' asChild>
-            <Button title='profil' />
+            <Button title='Profil' />
+         </Link>
+         <Link href='/createtask' asChild>
+            <Button title='Skapa en ny syssla' />
          </Link>
       </View>
    )

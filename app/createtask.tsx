@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { HeaderShownContext } from "@react-navigation/elements";
 import { router } from "expo-router";
 import { useState } from "react";
 import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet } from "react-native";
@@ -24,8 +25,8 @@ const Pill = ({ label, tone = "default", onPress }: PillProps) => {
 export default function NewTaskScreen() {
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
-    const [repeatDay, setRepeatDay] = useState(7);
-    const [value, setValue] = useState(2);
+    const [repeatDay, setRepeatDay] = useState(1);
+    const [value, setValue] = useState(1);
 
     const onSave = () => {
         console.log("Spara", { title, desc, repeatDay, value });
@@ -45,9 +46,6 @@ export default function NewTaskScreen() {
                 keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
             >
                 <ScrollView contentContainerStyle={styles.content}>
-                    <View style={[styles.card, { paddingVertical: 16, paddingHorizontal: 16 }]}>
-                        <Text style={styles.screenTitle}>Skapa en ny syssla</Text>
-                    </View>
 
                     <TextInput
                         style={[styles.card, styles.input]}
