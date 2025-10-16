@@ -13,7 +13,7 @@ export default function RootLayout() {
             fontWeight: "600",
           }
         }} />
-        <Stack.Screen name="createtask" options={{
+        <Stack.Screen name="createTask" options={{
           title: 'Skapa en ny syssla', headerTitleStyle: {
             fontSize: 24,
             fontWeight: "600",
