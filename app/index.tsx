@@ -26,6 +26,9 @@ export default function HomeScreen() {
          <Link href='/updateTask' asChild>
             <Button title='Ändra syssla' />
          </Link>
+         <Link href='/statistics' asChild>
+            <Button title='Statestik' />
+         </Link>
       </View>
    )
 }
