@@ -126,10 +126,4 @@ const styles = StyleSheet.create({
       color: '#007AFF',
       margin: 10,
    },
-   link: {
-      textAlign: 'center',
-      fontSize: 16,
-      color: '#007AFF',
-      margin: 10,
-   },
 })
