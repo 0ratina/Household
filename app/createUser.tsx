@@ -1,7 +1,7 @@
 import React, {useState, ComponentProps} from 'react'
 import {View, Text, TextInput, TouchableOpacity, StyleSheet, Button} from 'react-native'
 import {Ionicons} from '@expo/vector-icons'
-import {Link} from 'expo-router'
+import {Link, router} from 'expo-router'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -48,7 +48,7 @@ export default function Register() {
                value={password}
                onChangeText={setPassword}
             />
-
+            <Button title='Bli medlem' onPress={() => router.push('/profile')} />
             <Link style={styles.link} href='/login'>
                Logga in
             </Link>
