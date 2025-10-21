@@ -1,39 +1,62 @@
-import React, {useState} from 'react'
-import {View, Text, TextInput, TouchableOpacity, StyleSheet} from 'react-native'
+import React, {useState, ComponentProps} from 'react'
+import {View, Text, TextInput, TouchableOpacity, StyleSheet, Button} from 'react-native'
+import {Ionicons} from '@expo/vector-icons'
+import {Link, router} from 'expo-router'
+
+type IconName = ComponentProps<typeof Ionicons>['name']
+
+type ActionButtonProps = {
+   icon: IconName
+   label: string
+   onPress: () => void
+   dividerRight?: boolean
+}
+
+function ActionButton({icon, label, onPress, dividerRight}: ActionButtonProps) {
+   return (
+      <TouchableOpacity style={[styles.action, dividerRight && styles.actionDivider]} onPress={onPress} activeOpacity={0.8}>
+         <Ionicons name={icon} size={22} style={{marginRight: 10}} />
+         <Text style={styles.actionLabel}>{label}</Text>
+      </TouchableOpacity>
+   )
+}
 
 export default function Register() {
    const [username, setUsername] = useState('')
    const [password, setPassword] = useState('')
+
+   const onSave = () => {
+      console.log('Registrering sparad')
+   }
+
+   const onClose = () => {
+      console.log('Stäng registrering')
+   }
 
    return (
       <View style={styles.container}>
          <View style={styles.card}>
             <Text style={styles.header}>Registrera</Text>
 
-            <TextInput style={styles.input} placeholder='Användarnamn' placeholderTextColor='#aaa' value={username} onChangeText={setUsername} />
+            <TextInput style={styles.input} placeholder='Användarnamn' placeholderTextColor='#7A7A7A' value={username} onChangeText={setUsername} />
 
             <TextInput
                style={styles.input}
                placeholder='Lösenord'
-               placeholderTextColor='#aaa'
+               placeholderTextColor='#7A7A7A'
                secureTextEntry
                value={password}
                onChangeText={setPassword}
             />
-
-            <View style={styles.emojiRow}>
-               <Text style={styles.emoji}>🐱 🐶 🐸 ⭐ 🐙 🐦 🦄</Text>
-            </View>
+            <Button title='Bli medlem' onPress={() => router.push('/profile')} />
+            <Link style={styles.link} href='/login'>
+               Logga in
+            </Link>
          </View>
 
-         <View style={styles.footer}>
-            <TouchableOpacity style={[styles.button, styles.saveButton]}>
-               <Text style={styles.buttonText}>＋ Spara</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.button, styles.cancelButton]}>
-               <Text style={styles.buttonText}>✖ Stäng</Text>
-            </TouchableOpacity>
+         <View style={styles.bottomBar}>
+            <ActionButton icon='add-circle-outline' label='Spara' dividerRight onPress={onSave} />
+            <ActionButton icon='close-circle-outline' label='Stäng' onPress={onClose} />
          </View>
       </View>
    )
@@ -42,7 +65,7 @@ export default function Register() {
 const styles = StyleSheet.create({
    container: {
       flex: 1,
-      backgroundColor: '#f0f0f0ff',
+      backgroundColor: '#f0f0f0',
       justifyContent: 'space-between',
    },
    card: {
@@ -81,25 +104,32 @@ const styles = StyleSheet.create({
    emoji: {
       fontSize: 20,
    },
-   footer: {
+   bottomBar: {
       flexDirection: 'row',
       borderTopWidth: 1,
       borderTopColor: '#e0e0e0',
       backgroundColor: '#fff',
    },
-   button: {
+   action: {
       flex: 1,
+      flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: 14,
+      justifyContent: 'center',
+      paddingVertical: 15,
    },
-   saveButton: {
+   actionDivider: {
       borderRightWidth: 1,
       borderRightColor: '#e0e0e0',
    },
-   cancelButton: {},
-   buttonText: {
+   actionLabel: {
       fontSize: 16,
-      color: '#222',
       fontWeight: '500',
+      color: '#222',
+   },
+   link: {
+      textAlign: 'center',
+      fontSize: 16,
+      color: '#007AFF',
+      margin: 10,
    },
 })

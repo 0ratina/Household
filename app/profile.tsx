@@ -15,15 +15,23 @@ import { router } from "expo-router";
 
 
 export default function ProfileScreen() {
-    const [username, setUsername] = useState("");
+       const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
     const onSave = () => {
         console.log("Spara", { username, password });
+
+        if (!username.trim()) {
+            alert("Ange ett användarnamn!");
+            return;
+        }
+
+        router.push("/createhousehold");
     };
 
     const onClose = () => {
         console.log("Stäng");
+        router.back();
     };
 
     return (
@@ -73,19 +81,14 @@ export default function ProfileScreen() {
                     icon="add-circle-outline"
                     label="Spara"
                     dividerRight
-                    onPress={() => {
-                        onSave();
-                        router.back()
-                    }}
+                     onPress={onSave}
                 />
 
                 <ActionButton
                     icon="close-circle-outline"
                     label="Stäng"
-                    onPress={() => {
-                        onClose();
-                        router.back();
-                    }}
+                 onPress={onClose}
+
                 />
             </View>
         </View>

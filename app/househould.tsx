@@ -1,6 +1,26 @@
-import React, {useState} from 'react'
-import {View, Text, TouchableOpacity, StyleSheet, FlatList} from 'react-native'
+import React, {useState, ComponentProps} from 'react'
+import {View, Text, StyleSheet, FlatList, TouchableOpacity} from 'react-native'
+import {Ionicons} from '@expo/vector-icons'
 import {Household} from '../types/Household'
+import { router } from "expo-router";
+
+type IconName = ComponentProps<typeof Ionicons>['name']
+
+type ActionButtonProps = {
+   icon: IconName
+   label: string
+   onPress: () => void
+   dividerRight?: boolean
+}
+
+function ActionButton({icon, label, onPress, dividerRight}: ActionButtonProps) {
+   return (
+      <TouchableOpacity style={[styles.action, dividerRight && styles.actionDivider]} onPress={onPress} activeOpacity={0.8}>
+         <Ionicons name={icon} size={22} style={{marginRight: 10}} />
+         <Text style={styles.actionLabel}>{label}</Text>
+      </TouchableOpacity>
+   )
+}
 
 export default function HouseholdScreen() {
    const [households] = useState<Household[]>([
@@ -8,6 +28,14 @@ export default function HouseholdScreen() {
       {id: 2, Code: 5678, Name: 'Familjen Nilsson'},
       {id: 3, Code: 9101, Name: 'Kollektivet Solrosen'},
    ])
+
+  const onAdd = () => {
+    router.push('/createhousehold');
+  };
+
+     const onClose = () => {
+    router.back();
+  };
 
    return (
       <View style={styles.container}>
@@ -26,14 +54,18 @@ export default function HouseholdScreen() {
             />
          </View>
 
-         <View style={styles.footer}>
-            <TouchableOpacity style={[styles.button, styles.saveButton]}>
-               <Text style={styles.buttonText}>＋ Lägg till</Text>
-            </TouchableOpacity>
+         <View style={styles.bottomBar}>
+        <ActionButton
+          icon='add-circle-outline'
+          label='Lägg till'
+          dividerRight
+          onPress={onAdd}
+        />
 
-            <TouchableOpacity style={[styles.button, styles.cancelButton]}>
-               <Text style={styles.buttonText}>✖ Stäng</Text>
-            </TouchableOpacity>
+        <ActionButton
+          icon='close-circle-outline'
+          label='Stäng'
+          onPress={onClose} />
          </View>
       </View>
    )
@@ -42,7 +74,7 @@ export default function HouseholdScreen() {
 const styles = StyleSheet.create({
    container: {
       flex: 1,
-      backgroundColor: '#f0f0f0ff',
+      backgroundColor: '#f0f0f0',
       justifyContent: 'space-between',
    },
    card: {
@@ -82,25 +114,26 @@ const styles = StyleSheet.create({
       fontSize: 14,
       color: '#555',
    },
-   footer: {
+   bottomBar: {
       flexDirection: 'row',
       borderTopWidth: 1,
       borderTopColor: '#e0e0e0',
       backgroundColor: '#fff',
    },
-   button: {
+   action: {
       flex: 1,
+      flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: 14,
+      justifyContent: 'center',
+      paddingVertical: 15,
    },
-   saveButton: {
+   actionDivider: {
       borderRightWidth: 1,
       borderRightColor: '#e0e0e0',
    },
-   cancelButton: {},
-   buttonText: {
+   actionLabel: {
       fontSize: 16,
-      color: '#222',
       fontWeight: '500',
+      color: '#222',
    },
 })
