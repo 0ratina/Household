@@ -29,6 +29,9 @@ export default function HomeScreen() {
          <Link href='/statistics' asChild>
             <Button title='Statestik' />
          </Link>
+         <Link href='/householdoverview' asChild>
+            <Button title='householdoverview' />
+         </Link>
       </View>
    )
 }
