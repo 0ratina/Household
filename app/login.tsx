@@ -1,8 +1,8 @@
-import React, {useState, ComponentProps} from 'react'
-import {View, Text, TextInput, TouchableOpacity, StyleSheet} from 'react-native'
 import {Ionicons} from '@expo/vector-icons'
 import {Button} from '@react-navigation/elements'
 import {Link} from 'expo-router'
+import React, {ComponentProps, useState} from 'react'
+import {StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -119,6 +119,12 @@ const styles = StyleSheet.create({
       fontSize: 16,
       fontWeight: '500',
       color: '#222',
+   },
+   link: {
+      textAlign: 'center',
+      fontSize: 16,
+      color: '#007AFF',
+      margin: 10,
    },
    link: {
       textAlign: 'center',
