@@ -1,8 +1,8 @@
-import React, {useState, ComponentProps} from 'react'
-import {View, Text, TextInput, TouchableOpacity, StyleSheet} from 'react-native'
 import {Ionicons} from '@expo/vector-icons'
 import {Button} from '@react-navigation/elements'
 import {Link} from 'expo-router'
+import React, {ComponentProps, useState} from 'react'
+import {StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
