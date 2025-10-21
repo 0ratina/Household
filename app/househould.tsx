@@ -2,6 +2,7 @@ import React, {useState, ComponentProps} from 'react'
 import {View, Text, StyleSheet, FlatList, TouchableOpacity} from 'react-native'
 import {Ionicons} from '@expo/vector-icons'
 import {Household} from '../types/Household'
+import { router } from "expo-router";
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -28,13 +29,13 @@ export default function HouseholdScreen() {
       {id: 3, Code: 9101, Name: 'Kollektivet Solrosen'},
    ])
 
-   const onAdd = () => {
-      console.log('Lägg till hushåll')
-   }
+  const onAdd = () => {
+    router.push('/createhousehold');
+  };
 
-   const onClose = () => {
-      console.log('Stäng hushållslistan')
-   }
+     const onClose = () => {
+    router.back();
+  };
 
    return (
       <View style={styles.container}>
@@ -54,8 +55,17 @@ export default function HouseholdScreen() {
          </View>
 
          <View style={styles.bottomBar}>
-            <ActionButton icon='add-circle-outline' label='Lägg till' dividerRight onPress={onAdd} />
-            <ActionButton icon='close-circle-outline' label='Stäng' onPress={onClose} />
+        <ActionButton
+          icon='add-circle-outline'
+          label='Lägg till'
+          dividerRight
+          onPress={onAdd}
+        />
+
+        <ActionButton
+          icon='close-circle-outline'
+          label='Stäng'
+          onPress={onClose} />
          </View>
       </View>
    )
