@@ -1,6 +1,7 @@
 import React from 'react'
 import {View, Text, StyleSheet, TouchableOpacity, FlatList} from 'react-native'
 import {router} from 'expo-router'
+import {Ionicons} from '@expo/vector-icons'
 
 export default function KontoOversikt() {
    const hushall = [
@@ -11,13 +12,19 @@ export default function KontoOversikt() {
    return (
       <View style={styles.container}>
          <View style={styles.card}>
-            <Text style={styles.header}>Dina Hushåll</Text>
+            {/* Header med titel + profilikon */}
+            <View style={styles.headerContainer}>
+               <Text style={styles.header}>Dina Hushåll</Text>
+               <TouchableOpacity onPress={() => router.push('/profile')}>
+                  <Ionicons name='person-circle-outline' size={36} color='#007AFF' />
+               </TouchableOpacity>
+            </View>
 
             <FlatList
                data={hushall}
                keyExtractor={(item) => item.id}
                renderItem={({item}) => (
-                  <TouchableOpacity style={styles.householdItem} onPress={() => router.push(`/househould`)}>
+                  <TouchableOpacity style={styles.householdItem} onPress={() => router.push('/househould')}>
                      <Text style={styles.householdName}>{item.namn}</Text>
                   </TouchableOpacity>
                )}
@@ -28,7 +35,7 @@ export default function KontoOversikt() {
                <Text style={styles.buttonText}>Skapa nytt hushåll</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.buttonSecondary}>
+            <TouchableOpacity style={styles.buttonSecondary} onPress={() => router.push('/househould')}>
                <Text style={styles.buttonTextSecondary}>Gå med i hushåll</Text>
             </TouchableOpacity>
          </View>
@@ -52,11 +59,15 @@ const styles = StyleSheet.create({
       shadowOffset: {width: 0, height: 4},
       shadowRadius: 6,
    },
+   headerContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+   },
    header: {
       fontSize: 20,
       fontWeight: '600',
-      marginBottom: 16,
-      textAlign: 'center',
       color: '#111',
    },
    householdItem: {
