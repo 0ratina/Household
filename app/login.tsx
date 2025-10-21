@@ -1,8 +1,8 @@
 import {Ionicons} from '@expo/vector-icons'
-import {Button} from '@react-navigation/elements'
-import {Link} from 'expo-router'
+
+import {Link, router} from 'expo-router'
 import React, {ComponentProps, useState} from 'react'
-import {StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native'
+import {StyleSheet, Text, TextInput, TouchableOpacity, View, Button} from 'react-native'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -49,7 +49,7 @@ export default function Login() {
                value={password}
                onChangeText={setPassword}
             />
-            <Button>Logga in</Button>
+            <Button title='Logga In' onPress={() => router.push('/profile')} />
             <Link style={styles.link} href='/createUser'>
                Bli medlem
             </Link>
