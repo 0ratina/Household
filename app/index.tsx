@@ -1,5 +1,5 @@
-import {View, Text, Button} from 'react-native'
-import {Link} from 'expo-router'
+import { Link } from 'expo-router'
+import { Button, Text, View } from 'react-native'
 
 export default function HomeScreen() {
    return (
@@ -29,6 +29,8 @@ export default function HomeScreen() {
          <Link href='/(tabs)/profile' asChild>
             <Button title='Statestik' />
          </Link>
+         <Link href='/joinHousehold' asChild>
+            <Button title='Gå med i hushåll' />
          <Link href='/householdoverview' asChild>
             <Button title='householdoverview' />
          </Link>
