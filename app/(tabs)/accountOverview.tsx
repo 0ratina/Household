@@ -5,7 +5,7 @@ import {Ionicons} from '@expo/vector-icons'
 
 export default function KontoOversikt() {
    const hushall = [
-      {id: '1', namn: 'Familjen Andersson'},
+      {id: '1', namn: 'Familjen Anderson'},
       {id: '2', namn: 'Kollegorna på kontoret'},
    ]
 
