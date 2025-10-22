@@ -3,39 +3,46 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function StatisticsScreen() {
-  const [period, setPeriod] = useState("Idag");
+  const [periodIndex, setPeriodIndex] = useState(0);
+  const periods = ["Idag", "Förra veckan", "Oktober", "September", "2020"];
 
   const tasks = [
-    { name: "Dammsuga", color: "#FFD166" },
-    { name: "Diska", color: "#06D6A0" },
-    { name: "Laga mat", color: "#EF476F" },
-    { name: "Ta hand om hunden", color: "#118AB2" },
-    { name: "Torka golvet", color: "#073B4C" },
-    { name: "Vattna blommor", color: "#8ECAE6" },
+    { name: "Laga mat", color: "#F4A261" },
+    { name: "Damma", color: "#E76F51" },
+    { name: "Diska", color: "#F6BD60" },
+    { name: "Ta hand om My", color: "#E9C46A" },
+    { name: "Torka golvet", color: "#F7A072" },
+    { name: "Vattna blommor", color: "#F28482" },
   ];
 
   const changePeriod = (direction: "prev" | "next") => {
-    if (direction === "prev") setPeriod("Förra veckan");
-    else setPeriod("Nästa vecka");
+    if (direction === "prev") {
+      setPeriodIndex((prev) => (prev > 0 ? prev - 1 : periods.length - 1));
+    } else {
+      setPeriodIndex((prev) => (prev < periods.length - 1 ? prev + 1 : 0));
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Statistik</Text>
+      <Text style={styles.title}>Hushållet</Text>
 
       <View style={styles.navRow}>
         <TouchableOpacity onPress={() => changePeriod("prev")}>
-          <Ionicons name="arrow-back" size={28} color="#333" />
+          <Ionicons name="chevron-back" size={28} color="#333" />
         </TouchableOpacity>
 
-        <Text style={styles.periodText}>{period}</Text>
+        <Text style={styles.periodText}>{periods[periodIndex]}</Text>
 
         <TouchableOpacity onPress={() => changePeriod("next")}>
-          <Ionicons name="arrow-forward" size={28} color="#333" />
+          <Ionicons name="chevron-forward" size={28} color="#333" />
         </TouchableOpacity>
       </View>
 
       <View style={styles.bigCircle}>
+        <Text style={styles.emoji}>🐥</Text>
+        <Text style={styles.emoji}>🦊</Text>
+        <Text style={styles.emoji}>🐙</Text>
         <Text style={styles.bigText}>Totalt</Text>
       </View>
 
@@ -53,7 +60,7 @@ export default function StatisticsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F8F8",
+    backgroundColor: "#fff",
     alignItems: "center",
     paddingTop: 80,
   },
@@ -77,26 +84,31 @@ const styles = StyleSheet.create({
     width: 180,
     height: 180,
     borderRadius: 90,
-    backgroundColor: "#FFD166",
+    backgroundColor: "#F7C59F",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 40,
     shadowColor: "#000",
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
+  },
+  emoji: {
+    position: "absolute",
+    fontSize: 28,
   },
   bigText: {
-    fontSize: 24,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "600",
     color: "#333",
+    marginTop: 70,
   },
   smallCirclesContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
     gap: 20,
+    marginBottom: 50,
   },
   smallCircle: {
     width: 100,
@@ -108,7 +120,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
   },
   smallText: {
     color: "#fff",

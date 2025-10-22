@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { router } from "expo-router"; 
 
 export default function Createhousehold () {
   const [householdName, setHouseholdName] = useState('');
@@ -40,9 +41,9 @@ export default function Createhousehold () {
           <TouchableOpacity
             style={[styles.button, { backgroundColor: '#4B7BE5', marginTop: 20 }]}
             onPress={() => {
-              //senare lägga navigation till översikten ????????????????
-              console.log('Navigera till hushållsöversikt');
-            }}
+           router.push("/househould");  
+           }}
+
           >
             <Text style={styles.buttonText}>Gå till hushållet</Text>
           </TouchableOpacity>

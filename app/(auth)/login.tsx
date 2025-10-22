@@ -1,6 +1,8 @@
-import React, {useState, ComponentProps} from 'react'
-import {View, Text, TextInput, TouchableOpacity, StyleSheet} from 'react-native'
 import {Ionicons} from '@expo/vector-icons'
+
+import {Link, router} from 'expo-router'
+import React, {ComponentProps, useState} from 'react'
+import {StyleSheet, Text, TextInput, TouchableOpacity, View, Button} from 'react-native'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -47,6 +49,10 @@ export default function Login() {
                value={password}
                onChangeText={setPassword}
             />
+            <Button title='Logga In' onPress={() => router.push('/accountOverview')} />
+            <Link style={styles.link} href='/createUser'>
+               Bli medlem
+            </Link>
          </View>
 
          <View style={styles.bottomBar}>
@@ -113,5 +119,11 @@ const styles = StyleSheet.create({
       fontSize: 16,
       fontWeight: '500',
       color: '#222',
+   },
+   link: {
+      textAlign: 'center',
+      fontSize: 16,
+      color: '#007AFF',
+      margin: 10,
    },
 })

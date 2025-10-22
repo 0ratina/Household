@@ -1,6 +1,7 @@
 import React, {useState, ComponentProps} from 'react'
-import {View, Text, TextInput, TouchableOpacity, StyleSheet} from 'react-native'
+import {View, Text, TextInput, TouchableOpacity, StyleSheet, Button} from 'react-native'
 import {Ionicons} from '@expo/vector-icons'
+import {Link, router} from 'expo-router'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -47,10 +48,10 @@ export default function Register() {
                value={password}
                onChangeText={setPassword}
             />
-
-            <View style={styles.emojiRow}>
-               <Text style={styles.emoji}>🐱 🐶 🐸 ⭐ 🐙 🐦 🦄</Text>
-            </View>
+            <Button title='Bli medlem' onPress={() => router.push('/accountOverview')} />
+            <Link style={styles.link} href='/login'>
+               Logga in
+            </Link>
          </View>
 
          <View style={styles.bottomBar}>
@@ -124,5 +125,11 @@ const styles = StyleSheet.create({
       fontSize: 16,
       fontWeight: '500',
       color: '#222',
+   },
+   link: {
+      textAlign: 'center',
+      fontSize: 16,
+      color: '#007AFF',
+      margin: 10,
    },
 })
