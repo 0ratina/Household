@@ -38,6 +38,9 @@ export default function HomeScreen() {
          <Link href='/(tabs)/accountOverview' asChild>
             <Button title='Kontoöversikt' />
          </Link>
+         <Link href='/taskOverview' asChild>
+            <Button title='Översikt Syssla' />
+         </Link>
       </View>
    )
 }
