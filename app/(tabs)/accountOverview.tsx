@@ -14,7 +14,7 @@ export default function KontoOversikt() {
          <View style={styles.card}>
             <View style={styles.headerContainer}>
                <Text style={styles.header}>Dina Hushåll</Text>
-               <TouchableOpacity onPress={() => router.push('/tabs/profile')}>
+               <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
                   <Ionicons name='person-circle-outline' size={36} color='#007AFF' />
                </TouchableOpacity>
             </View>
