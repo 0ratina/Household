@@ -25,6 +25,12 @@ export default function RootLayout() {
             fontWeight: "600",
           }
         }} />
+        <Stack.Screen name="joinHousehold" options={{
+          title: 'Gå med i hushåll', headerTitleStyle: {
+            fontSize: 24,
+            fontWeight: "600",
+          }
+        }} />
         <Stack.Screen name="modal" options={{ title: 'Modal' }} />
         <Stack.Screen name="explore" options={{ title: 'explore' }} />
       </Stack>
