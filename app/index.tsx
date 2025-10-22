@@ -17,7 +17,7 @@ export default function HomeScreen() {
          <Link href='/createhousehold' asChild>
             <Button title='skapa hushåll ' />
          </Link>
-         <Link href='/profile' asChild>
+         <Link href='/tabs/profile' asChild>
             <Button title='Profil' />
          </Link>
          <Link href='/createTask' asChild>
@@ -26,13 +26,13 @@ export default function HomeScreen() {
          <Link href='/updateTask' asChild>
             <Button title='Ändra syssla' />
          </Link>
-         <Link href='/statistics' asChild>
+         <Link href='/tabs/statistics' asChild>
             <Button title='Statestik' />
          </Link>
          <Link href='/householdoverview' asChild>
             <Button title='householdoverview' />
          </Link>
-         <Link href='/accountOverview' asChild>
+         <Link href='/tabs/accountOverview' asChild>
             <Button title='Kontoöversikt' />
          </Link>
       </View>

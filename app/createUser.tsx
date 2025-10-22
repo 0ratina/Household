@@ -48,7 +48,7 @@ export default function Register() {
                value={password}
                onChangeText={setPassword}
             />
-            <Button title='Bli medlem' onPress={() => router.push('/profile')} />
+            <Button title='Bli medlem' onPress={() => router.push('/tabs/accountOverview')} />
             <Link style={styles.link} href='/login'>
                Logga in
             </Link>
