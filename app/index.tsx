@@ -31,6 +31,7 @@ export default function HomeScreen() {
          </Link>
          <Link href='/joinHousehold' asChild>
             <Button title='Gå med i hushåll' />
+            </Link>
          <Link href='/householdoverview' asChild>
             <Button title='householdoverview' />
          </Link>
