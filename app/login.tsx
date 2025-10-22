@@ -49,7 +49,7 @@ export default function Login() {
                value={password}
                onChangeText={setPassword}
             />
-            <Button title='Logga In' onPress={() => router.push('/tabs/accountOverview')} />
+            <Button title='Logga In' onPress={() => router.push('/accountOverview')} />
             <Link style={styles.link} href='/createUser'>
                Bli medlem
             </Link>
