@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function Createhousehold () {
+export default function joinHousehold () {
     return (
 
         <View style={styles.container}>
