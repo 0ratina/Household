@@ -1,7 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet } from "react-native";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/src/firebase";
+
+interface Task {
+  id?: string;
+  title: string;
+  desc?: string;
+  repeatDay: number;
+  value: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 type PillProps = { label: string | number; tone?: "default" | "repeat" | "muted"; onPress?: () => void };
 
@@ -22,20 +34,66 @@ const Pill = ({ label, tone = "default", onPress }: PillProps) => {
 };
 
 export default function UpdateTaskScreen() {
+     const { id } = useLocalSearchParams();
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
     const [repeatDay, setRepeatDay] = useState(1);
     const [value, setValue] = useState(1);
 
-    const onUpdate = () => {
-        console.log("Ändra", { title, desc, repeatDay, value });
-        router.back();
+    // DETTA HAR JAG ÄNDRAT!!!!!!! — hämta task-data från Firestore
+  useEffect(() => {
+    const fetchTask = async () => {
+      if (!id) return;
+
+      try {
+        const docRef = doc(db, "tasks", id as string);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data() as Task;
+          setTitle(data.title);
+          setDesc(data.desc || "");
+          setRepeatDay(data.repeatDay);
+          setValue(data.value);
+        } else {
+          alert("Task hittades inte!");
+        }
+      } catch (err) {
+        console.error("Fel vid hämtning:", err);
+      }
     };
 
-    const onClose = () => {
-        console.log("Stäng");
-        router.back();
-    };
+    fetchTask();
+  }, [id]);
+
+  // DETTA HAR JAG ÄNDRAT!!!!!!! — uppdatera task i Firestore
+  const onUpdate = async () => {
+    if (!title.trim()) return alert("Skriv en titel!");
+
+    try {
+      const docRef = doc(db, "tasks", id as string);
+
+      await updateDoc(docRef, {
+        title,
+        desc,
+        repeatDay,
+        value,
+        updatedAt: new Date(),
+      });
+
+      console.log("Task uppdaterad i Firebase!");
+      alert("Task uppdaterad! ✅");
+      router.back();
+    } catch (err) {
+      console.error("Fel vid uppdatering:", err);
+      alert("Kunde inte uppdatera tasken 😢");
+    }
+  };
+
+  const onClose = () => {
+    console.log("Stäng tryckt");
+    router.back();
+  };
 
     return (
         <View style={styles.container}>
