@@ -1,5 +1,5 @@
-import { Link } from 'expo-router'
-import { Button, Text, View } from 'react-native'
+import {View, Text, Button} from 'react-native'
+import {Link} from 'expo-router'
 
 export default function HomeScreen() {
    return (
@@ -17,29 +17,20 @@ export default function HomeScreen() {
          <Link href='/createhousehold' asChild>
             <Button title='skapa hushåll ' />
          </Link>
-         <Link href='/(tabs)/profile' asChild>
+         <Link href='/profile' asChild>
             <Button title='Profil' />
          </Link>
-         <Link href='/createtask' asChild>
+         <Link href='/createTask' asChild>
             <Button title='Skapa en ny syssla' />
          </Link>
          <Link href='/updateTask' asChild>
             <Button title='Ändra syssla' />
          </Link>
-         <Link href='/(tabs)/profile' asChild>
+         <Link href='/statistics' asChild>
             <Button title='Statestik' />
-         </Link>
-         <Link href='/joinHousehold' asChild>
-            <Button title='Gå med i hushåll' />
          </Link>
          <Link href='/householdoverview' asChild>
             <Button title='householdoverview' />
-         </Link>
-         <Link href='/(tabs)/accountOverview' asChild>
-            <Button title='Kontoöversikt' />
-         </Link>
-         <Link href='/taskOverview' asChild>
-            <Button title='Översikt Syssla' />
          </Link>
       </View>
    )
