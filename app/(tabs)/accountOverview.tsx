@@ -5,17 +5,16 @@ import {Ionicons} from '@expo/vector-icons'
 
 export default function KontoOversikt() {
    const hushall = [
-      {id: '1', namn: 'Familjen Andersson'},
+      {id: '1', namn: 'Familjen Anderson'},
       {id: '2', namn: 'Kollegorna på kontoret'},
    ]
 
    return (
       <View style={styles.container}>
          <View style={styles.card}>
-            {/* Header med titel + profilikon */}
             <View style={styles.headerContainer}>
                <Text style={styles.header}>Dina Hushåll</Text>
-               <TouchableOpacity onPress={() => router.push('/profile')}>
+               <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
                   <Ionicons name='person-circle-outline' size={36} color='#007AFF' />
                </TouchableOpacity>
             </View>

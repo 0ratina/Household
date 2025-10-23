@@ -27,7 +27,6 @@ export default function StatisticsScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Hushållet</Text>
 
-      {/* Tidsperiodväljare */}
       <View style={styles.navRow}>
         <TouchableOpacity onPress={() => changePeriod("prev")}>
           <Ionicons name="chevron-back" size={28} color="#333" />
@@ -40,7 +39,6 @@ export default function StatisticsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Stor cirkel med avatarer */}
       <View style={styles.bigCircle}>
         <Text style={styles.emoji}>🐥</Text>
         <Text style={styles.emoji}>🦊</Text>
@@ -48,7 +46,6 @@ export default function StatisticsScreen() {
         <Text style={styles.bigText}>Totalt</Text>
       </View>
 
-      {/* Små cirklar för sysslor */}
       <View style={styles.smallCirclesContainer}>
         {tasks.map((task, index) => (
           <View key={index} style={[styles.smallCircle, { backgroundColor: task.color }]}>
