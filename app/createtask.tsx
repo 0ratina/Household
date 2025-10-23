@@ -1,7 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet,  } from "react-native";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "@/src/firebase";
+
+interface Task {
+  id?: string;           
+  title: string;     
+  desc?: string;       
+  repeatDay: number;   
+  value: number;         
+  createdAt?: Date;    
+}
+
+
 
 type PillProps = { label: string | number; tone?: "default" | "repeat" | "muted"; onPress?: () => void };
 
@@ -27,15 +40,33 @@ export default function NewTaskScreen() {
     const [repeatDay, setRepeatDay] = useState(1);
     const [value, setValue] = useState(1);
 
-    const onSave = () => {
-        console.log("Spara", { title, desc, repeatDay, value });
-        router.back();
+const onSave = async () => {
+    
+    if (!title.trim()) return alert("Skriv en titel!");
+
+    const newTask: Task = {
+      title,
+      desc,
+      repeatDay,
+      value,
+      createdAt: new Date(),
     };
 
-    const onClose = () => {
-        console.log("Stäng");
-        router.back();
-    };
+    try {
+      await addDoc(collection(db, "tasks"), newTask);
+      console.log("Ny task sparad i Firebase!");
+      alert("Task sparad! ✅");
+      router.back();
+    } catch (err) {
+      console.error("Fel vid sparande:", err);
+      alert("Kunde inte spara tasken 😢");
+    }
+  };
+
+  const onClose = () => {
+    console.log("Stäng tryckt");
+    router.back();
+  };
 
     return (
         <View style={styles.container}>
