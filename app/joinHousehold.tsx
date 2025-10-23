@@ -1,10 +1,9 @@
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function Createhousehold () {
+export default function joinHousehold () {
     return (
-        <View>
 
-        <ScrollView style={styles.container}>
+        <View style={styles.container}>
 
             <View style = {styles.inputView}>
                 <TextInput style = {styles.input}
@@ -16,9 +15,8 @@ export default function Createhousehold () {
             <TouchableOpacity style= {styles.joinButton}> 
                 <Text style = {{fontSize: 18}}>Gå med</Text>
             </TouchableOpacity>
-
-        </ScrollView>
         </View>
+
 
     )
 }
@@ -45,6 +43,7 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 4 },
         elevation: 3,
+        color: '#111' ,
     },
     joinButton: {
         alignSelf:'center' ,
