@@ -2,9 +2,9 @@ import React, {useState, ComponentProps} from 'react'
 import {View, Text, TextInput, TouchableOpacity, Button, Alert, StyleSheet} from 'react-native'
 import {Ionicons} from '@expo/vector-icons'
 import {Link, router} from 'expo-router'
-import {collection, addDoc} from 'firebase/firestore'
-import {db} from '../../src/firebase'
-import {useMutation, useQueryClient} from '@tanstack/react-query'
+import {useMutation} from '@tanstack/react-query'
+import {getAuth, createUserWithEmailAndPassword} from 'firebase/auth'
+import {auth} from '../../src/firebase'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -13,12 +13,6 @@ type ActionButtonProps = {
    label: string
    onPress: () => void
    dividerRight?: boolean
-}
-
-export interface Account {
-   id: number
-   Username: string
-   Password: string
 }
 
 function ActionButton({icon, label, onPress, dividerRight}: ActionButtonProps) {
@@ -30,37 +24,35 @@ function ActionButton({icon, label, onPress, dividerRight}: ActionButtonProps) {
    )
 }
 
-async function createAccount(account: Omit<Account, 'id'>) {
-   const docRef = await addDoc(collection(db, 'accounts'), account)
-   return {id: docRef.id, ...account}
+async function createUser({email, password}: {email: string; password: string}) {
+   const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+   return userCredential.user
 }
 
 export default function Register() {
-   const [username, setUsername] = useState('')
+   const [email, setEmail] = useState('')
    const [password, setPassword] = useState('')
-   const queryClient = useQueryClient() // ✅ hanterar cache
 
    const mutation = useMutation({
-      mutationFn: (newAccount: Omit<Account, 'id'>) => createAccount(newAccount),
-      onSuccess: () => {
-         queryClient.invalidateQueries({queryKey: ['accounts']})
-         Alert.alert('Konto skapat!')
-         setUsername('')
+      mutationFn: createUser,
+      onSuccess: (user) => {
+         Alert.alert('Konto skapat!', `Välkommen ${user.email}`)
+         setEmail('')
          setPassword('')
          router.push('/accountOverview')
       },
       onError: (error) => {
-         console.error('Fel vid skapande:', error)
-         Alert.alert('Det gick inte att skapa kontot.')
+         console.error('Fel vid registrering:', error)
+         Alert.alert('Kunde inte skapa konto.')
       },
    })
 
    const onSave = () => {
-      if (!username || !password) {
-         Alert.alert('Fyll i användarnamn och lösenord.')
+      if (!email || !password) {
+         Alert.alert('Fyll i e-post och lösenord.')
          return
       }
-      mutation.mutate({Username: username, Password: password})
+      mutation.mutate({email, password})
    }
 
    const onClose = () => {
@@ -70,20 +62,13 @@ export default function Register() {
    return (
       <View style={styles.container}>
          <View style={styles.card}>
-            <Text style={styles.header}>Registrera konto</Text>
+            <Text style={styles.header}>Registrera</Text>
 
-            <TextInput style={styles.input} placeholder='Användarnamn' placeholderTextColor='#7A7A7A' value={username} onChangeText={setUsername} />
+            <TextInput style={styles.input} placeholder='E-post' keyboardType='email-address' value={email} onChangeText={setEmail} />
 
-            <TextInput
-               style={styles.input}
-               placeholder='Lösenord'
-               placeholderTextColor='#7A7A7A'
-               secureTextEntry
-               value={password}
-               onChangeText={setPassword}
-            />
+            <TextInput style={styles.input} placeholder='Lösenord' secureTextEntry value={password} onChangeText={setPassword} />
 
-            <Button title='Skapa konto' onPress={onSave} disabled={mutation.isPending} />
+            <Button title={mutation.isPending ? 'Skapar konto...' : 'Bli medlem'} onPress={onSave} disabled={mutation.isPending} />
 
             <Link style={styles.link} href='/login'>
                Logga in

@@ -2,8 +2,9 @@ import {Ionicons} from '@expo/vector-icons'
 import {Link, router} from 'expo-router'
 import React, {ComponentProps, useState} from 'react'
 import {View, Text, TextInput, TouchableOpacity, Button, Alert, StyleSheet} from 'react-native'
-import {collection, getDocs, query, where} from 'firebase/firestore'
-import {db} from '../../src/firebase'
+import {useMutation} from '@tanstack/react-query'
+import {getAuth, signInWithEmailAndPassword} from 'firebase/auth'
+import {auth} from '../../src/firebase'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -23,37 +24,35 @@ function ActionButton({icon, label, onPress, dividerRight}: ActionButtonProps) {
    )
 }
 
+async function signInUser({email, password}: {email: string; password: string}) {
+   const userCredential = await signInWithEmailAndPassword(auth, email, password)
+   return userCredential.user
+}
+
 export default function Login() {
-   const [username, setUsername] = useState('')
+   const [email, setUsername] = useState('')
    const [password, setPassword] = useState('')
 
-   const onLogin = async () => {
-      if (!username || !password) {
+   const mutation = useMutation({
+      mutationFn: signInUser,
+      onSuccess: (user) => {
+         Alert.alert('Inloggad!', `Välkommen ${user.email}`)
+         setUsername('')
+         setPassword('')
+         router.push('/accountOverview')
+      },
+      onError: (error) => {
+         console.error('Fel vid inloggning:', error)
+         Alert.alert('Fel användarnamn eller lösenord.')
+      },
+   })
+
+   const onLogin = () => {
+      if (!email || !password) {
          Alert.alert('Fyll i användarnamn och lösenord.')
          return
       }
-
-      try {
-         const accountsRef = collection(db, 'accounts')
-         const q = query(accountsRef, where('Username', '==', username))
-         const querySnapshot = await getDocs(q)
-
-         if (querySnapshot.empty) {
-            Alert.alert('Användarnamnet finns inte.')
-            return
-         }
-
-         const account = querySnapshot.docs[0].data()
-         if (account.Password === password) {
-            Alert.alert('Välkommen!', `Inloggad som ${username}`)
-            router.push('/accountOverview')
-         } else {
-            Alert.alert('Fel lösenord.')
-         }
-      } catch (error) {
-         console.error('Fel vid inloggning:', error)
-         Alert.alert('Kunde inte logga in.')
-      }
+      mutation.mutate({email, password})
    }
 
    const onClose = () => {
@@ -63,9 +62,9 @@ export default function Login() {
    return (
       <View style={styles.container}>
          <View style={styles.card}>
-            <Text style={styles.header}>Logga In</Text>
+            <Text style={styles.header}>Logga in</Text>
 
-            <TextInput style={styles.input} placeholder='Användarnamn' placeholderTextColor='#7A7A7A' value={username} onChangeText={setUsername} />
+            <TextInput style={styles.input} placeholder='Användarnamn' placeholderTextColor='#7A7A7A' value={email} onChangeText={setUsername} />
 
             <TextInput
                style={styles.input}
@@ -76,7 +75,7 @@ export default function Login() {
                onChangeText={setPassword}
             />
 
-            <Button title='Logga In' onPress={onLogin} />
+            <Button title={mutation.isPending ? 'Loggar in...' : 'Logga in'} onPress={onLogin} disabled={mutation.isPending} />
 
             <Link style={styles.link} href='/createUser'>
                Bli medlem
