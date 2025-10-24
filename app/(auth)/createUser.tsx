@@ -1,7 +1,10 @@
 import React, {useState, ComponentProps} from 'react'
-import {View, Text, TextInput, TouchableOpacity, StyleSheet, Button} from 'react-native'
+import {View, Text, TextInput, TouchableOpacity, Button, Alert, StyleSheet} from 'react-native'
 import {Ionicons} from '@expo/vector-icons'
 import {Link, router} from 'expo-router'
+import {collection, addDoc} from 'firebase/firestore'
+import {db} from '../../src/firebase'
+import {useMutation, useQueryClient} from '@tanstack/react-query'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -10,6 +13,12 @@ type ActionButtonProps = {
    label: string
    onPress: () => void
    dividerRight?: boolean
+}
+
+export interface Account {
+   id: number
+   Username: string
+   Password: string
 }
 
 function ActionButton({icon, label, onPress, dividerRight}: ActionButtonProps) {
@@ -21,22 +30,47 @@ function ActionButton({icon, label, onPress, dividerRight}: ActionButtonProps) {
    )
 }
 
+async function createAccount(account: Omit<Account, 'id'>) {
+   const docRef = await addDoc(collection(db, 'accounts'), account)
+   return {id: docRef.id, ...account}
+}
+
 export default function Register() {
    const [username, setUsername] = useState('')
    const [password, setPassword] = useState('')
+   const queryClient = useQueryClient() // ✅ hanterar cache
+
+   const mutation = useMutation({
+      mutationFn: (newAccount: Omit<Account, 'id'>) => createAccount(newAccount),
+      onSuccess: () => {
+         queryClient.invalidateQueries({queryKey: ['accounts']})
+         Alert.alert('Konto skapat!')
+         setUsername('')
+         setPassword('')
+         router.push('/accountOverview')
+      },
+      onError: (error) => {
+         console.error('Fel vid skapande:', error)
+         Alert.alert('Det gick inte att skapa kontot.')
+      },
+   })
 
    const onSave = () => {
-      console.log('Registrering sparad')
+      if (!username || !password) {
+         Alert.alert('Fyll i användarnamn och lösenord.')
+         return
+      }
+      mutation.mutate({Username: username, Password: password})
    }
 
    const onClose = () => {
-      console.log('Stäng registrering')
+      router.back()
    }
 
    return (
       <View style={styles.container}>
          <View style={styles.card}>
-            <Text style={styles.header}>Registrera</Text>
+            <Text style={styles.header}>Registrera konto</Text>
 
             <TextInput style={styles.input} placeholder='Användarnamn' placeholderTextColor='#7A7A7A' value={username} onChangeText={setUsername} />
 
@@ -48,7 +82,9 @@ export default function Register() {
                value={password}
                onChangeText={setPassword}
             />
-            <Button title='Bli medlem' onPress={() => router.push('/accountOverview')} />
+
+            <Button title='Skapa konto' onPress={onSave} disabled={mutation.isPending} />
+
             <Link style={styles.link} href='/login'>
                Logga in
             </Link>

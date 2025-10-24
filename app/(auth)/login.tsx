@@ -1,8 +1,9 @@
 import {Ionicons} from '@expo/vector-icons'
-
 import {Link, router} from 'expo-router'
 import React, {ComponentProps, useState} from 'react'
-import {StyleSheet, Text, TextInput, TouchableOpacity, View, Button} from 'react-native'
+import {View, Text, TextInput, TouchableOpacity, Button, Alert, StyleSheet} from 'react-native'
+import {collection, getDocs, query, where} from 'firebase/firestore'
+import {db} from '../../src/firebase'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -26,12 +27,37 @@ export default function Login() {
    const [username, setUsername] = useState('')
    const [password, setPassword] = useState('')
 
-   const onSave = () => {
-      console.log('Spara tryckt')
+   const onLogin = async () => {
+      if (!username || !password) {
+         Alert.alert('Fyll i användarnamn och lösenord.')
+         return
+      }
+
+      try {
+         const accountsRef = collection(db, 'accounts')
+         const q = query(accountsRef, where('Username', '==', username))
+         const querySnapshot = await getDocs(q)
+
+         if (querySnapshot.empty) {
+            Alert.alert('Användarnamnet finns inte.')
+            return
+         }
+
+         const account = querySnapshot.docs[0].data()
+         if (account.Password === password) {
+            Alert.alert('Välkommen!', `Inloggad som ${username}`)
+            router.push('/accountOverview')
+         } else {
+            Alert.alert('Fel lösenord.')
+         }
+      } catch (error) {
+         console.error('Fel vid inloggning:', error)
+         Alert.alert('Kunde inte logga in.')
+      }
    }
 
    const onClose = () => {
-      console.log('Stäng tryckt')
+      router.back()
    }
 
    return (
@@ -49,14 +75,16 @@ export default function Login() {
                value={password}
                onChangeText={setPassword}
             />
-            <Button title='Logga In' onPress={() => router.push('/accountOverview')} />
+
+            <Button title='Logga In' onPress={onLogin} />
+
             <Link style={styles.link} href='/createUser'>
                Bli medlem
             </Link>
          </View>
 
          <View style={styles.bottomBar}>
-            <ActionButton icon='add-circle-outline' label='Spara' dividerRight onPress={onSave} />
+            <ActionButton icon='add-circle-outline' label='Logga in' dividerRight onPress={onLogin} />
             <ActionButton icon='close-circle-outline' label='Stäng' onPress={onClose} />
          </View>
       </View>
