@@ -1,12 +1,26 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../../src/firebase"; 
+
+interface CompletedTask {
+  taskId: string;
+  userId: string;
+  householdId: string;
+  value: number;
+  doneAt: Date;
+}
 
 export default function StatisticsScreen() {
   const [periodIndex, setPeriodIndex] = useState(0);
-  const periods = ["Idag", "Förra veckan", "Oktober", "September", "2020"];
+  const periods = ["Idag", "Förra veckan", "Oktober"];
 
-  const tasks = [
+  const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  ///  Mock
+  const defaultTasks = [
     { name: "Laga mat", color: "#F4A261" },
     { name: "Damma", color: "#E76F51" },
     { name: "Diska", color: "#F6BD60" },
@@ -14,6 +28,39 @@ export default function StatisticsScreen() {
     { name: "Torka golvet", color: "#F7A072" },
     { name: "Vattna blommor", color: "#F28482" },
   ];
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const q = query(
+          collection(db, "completedTasks"),
+          where("householdId", "==", "test-household") // ändras senare
+        );
+
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map(doc => {
+          const d = doc.data();
+          return {
+            ...d,
+            doneAt: d.doneAt?.toDate(),
+          } as CompletedTask;
+        });
+
+        setCompletedTasks(data);
+      } catch (e) {
+        console.error("Statistikfel:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const totalValue = completedTasks.reduce(
+    (sum, t) => sum + (t.value || 0),
+    0
+  );
 
   const changePeriod = (direction: "prev" | "next") => {
     if (direction === "prev") {
@@ -25,6 +72,7 @@ export default function StatisticsScreen() {
 
   return (
     <View style={styles.container}>
+
       <Text style={styles.title}>Hushållet</Text>
 
       <View style={styles.navRow}>
@@ -40,19 +88,24 @@ export default function StatisticsScreen() {
       </View>
 
       <View style={styles.bigCircle}>
-        <Text style={styles.emoji}>🐥</Text>
-        <Text style={styles.emoji}>🦊</Text>
-        <Text style={styles.emoji}>🐙</Text>
-        <Text style={styles.bigText}>Totalt</Text>
+        <Text style={styles.bigText}>
+          {loading ? "..." : `${totalValue}`}
+        </Text>
+        <Text style={{ fontSize: 14 }}>poäng totalt</Text>
       </View>
 
+      {completedTasks.length === 0 && !loading && (
+        <Text style={styles.noStatsText}>Ingen statistik ännu 😅</Text>
+      )}
+
       <View style={styles.smallCirclesContainer}>
-        {tasks.map((task, index) => (
+        {defaultTasks.map((task, index) => (
           <View key={index} style={[styles.smallCircle, { backgroundColor: task.color }]}>
             <Text style={styles.smallText}>{task.name}</Text>
           </View>
         ))}
       </View>
+
     </View>
   );
 }
@@ -87,28 +140,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7C59F",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 40,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  emoji: {
-    position: "absolute",
-    fontSize: 28,
+    marginBottom: 12,
   },
   bigText: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: 42,
+    fontWeight: "900",
     color: "#333",
-    marginTop: 70,
+  },
+  noStatsText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+    marginBottom: 20,
   },
   smallCirclesContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
     gap: 20,
-    marginBottom: 50,
+    paddingVertical: 20,
   },
   smallCircle: {
     width: 100,
@@ -116,6 +166,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
+    padding: 5,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 6,
@@ -123,8 +174,8 @@ const styles = StyleSheet.create({
   },
   smallText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     textAlign: "center",
-    paddingHorizontal: 8,
+    fontSize: 14,
   },
 });
