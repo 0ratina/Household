@@ -9,17 +9,14 @@ import {
     KeyboardAvoidingView,
     Platform
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import type { ComponentProps } from "react";
 import { router } from "expo-router";
-
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../../src/firebase";
 
 export interface Profile {
     id: number;
-    HouseHoldID: number;
+    HouseholdID: number;
     Name: string;
     isOwner: boolean;
     AvatarID: string;
@@ -29,7 +26,7 @@ export interface Profile {
 
 type Account = {
     AccountId: number;
-    HouseHoldID: number;
+    HouseholdID: number;
     isOwner?: boolean;
     isRequest?: boolean;
     AvatarID?: string;
@@ -63,14 +60,12 @@ async function getProfile(houseId: number, accountId: number) {
 }
 
 async function saveProfile(profile: Profile) {
-    const { HouseHoldID, AccountId } = profile;
-    const ref = doc(db, `households/${HouseHoldID}/profiles/${AccountId}`);
+    const { HouseholdID, AccountId } = profile;
+    const ref = doc(db, `households/${HouseholdID}/profiles/${AccountId}`);
     await setDoc(
         ref,
         {
             ...profile,
-            updatedAt: serverTimestamp(),
-            createdAt: serverTimestamp(),
         },
         { merge: true }
     );
@@ -81,8 +76,8 @@ export default function ProfileScreen() {
 
     const {
         data: account,
-        isLoading: linkLoading,
-        error: linkError,
+        isLoading: accountLoading,
+        error: accountError,
     } = useQuery({
         queryKey: ["account", uid],
         enabled: !!uid,
@@ -93,9 +88,9 @@ export default function ProfileScreen() {
         data: existingProfile,
         isLoading: profileLoading,
     } = useQuery({
-        queryKey: ["profile", account?.HouseHoldID, account?.AccountId],
-        enabled: !!account?.HouseHoldID && !!account?.AccountId,
-        queryFn: () => getProfile(account!.HouseHoldID, account!.AccountId),
+        queryKey: ["profile", account?.HouseholdID, account?.AccountId],
+        enabled: !!account?.HouseholdID && !!account?.AccountId,
+        queryFn: () => getProfile(account!.HouseholdID, account!.AccountId),
     });
 
     const [username, setUsername] = useState("");
@@ -114,12 +109,12 @@ export default function ProfileScreen() {
 
     const { mutate, isPending } = useMutation({
         mutationFn: async (name: string) => {
-            if (!account?.HouseHoldID || !account?.AccountId) {
-                throw new Error("Saknar HouseHoldID eller AccountId.");
+            if (!account?.HouseholdID || !account?.AccountId) {
+                throw new Error("Saknar HouseholdID eller AccountId.");
             }
             const profile: Profile = {
                 id: account.AccountId,
-                HouseHoldID: account.HouseHoldID,
+                HouseholdID: account.HouseholdID,
                 Name: name.trim(),
                 isOwner: existingProfile?.isOwner ?? account.isOwner ?? false,
                 AvatarID: avatarId,
@@ -201,14 +196,17 @@ export default function ProfileScreen() {
                 </ScrollView>
             </KeyboardAvoidingView>
 
-            <View style={styles.bottomBar}>
-                <ActionButton
-                    icon="add-circle-outline"
-                    label={isPending ? "Sparar..." : "Spara"}
-                    dividerRight
+            <View style={styles.bottomButton}>
+                <TouchableOpacity
+                    style={[styles.pillButton]}
+                    activeOpacity={0.85}
                     onPress={onSave}
-                />
-                <ActionButton icon="close-circle-outline" label="Stäng" onPress={onClose} />
+                    disabled={isPending}
+                >
+                    <Text style={styles.pillButtonText}>
+                        {isPending ? "Sparar..." : "Spara"}
+                    </Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -219,27 +217,6 @@ function Centered({ children }: { children: React.ReactNode }) {
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 20 }}>
             {children}
         </View>
-    );
-}
-
-type IconName = ComponentProps<typeof Ionicons>["name"];
-type ActionButtonProps = {
-    icon: IconName;
-    label: string;
-    onPress: () => void;
-    dividerRight?: boolean;
-};
-
-function ActionButton({ icon, label, onPress, dividerRight }: ActionButtonProps) {
-    return (
-        <TouchableOpacity
-            style={[styles.action, dividerRight && styles.actionDivider]}
-            onPress={onPress}
-            activeOpacity={0.8}
-        >
-            <Ionicons name={icon} size={22} style={{ marginRight: 10 }} />
-            <Text style={styles.actionLabel}>{label}</Text>
-        </TouchableOpacity>
     );
 }
 
@@ -302,23 +279,31 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         elevation: 3,
     },
-    bottomBar: {
+    actionLabel: { fontSize: 16, fontWeight: "600" },
+    bottomButton: {
         position: "absolute",
+        bottom: 30,
         left: 0,
         right: 0,
-        bottom: 0,
-        backgroundColor: "#FFFFFF",
-        flexDirection: "row",
-        borderTopWidth: 0.5,
-        borderTopColor: "rgba(0,0,0,0.08)",
-    },
-    action: {
-        flex: 1,
-        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 16,
     },
-    actionDivider: { borderRightWidth: 0.5, borderRightColor: "rgba(0,0,0,0.08)" },
-    actionLabel: { fontSize: 16, fontWeight: "600" },
+
+    pillButton: {
+        paddingHorizontal: 32,
+        paddingVertical: 14,
+        borderRadius: 40,
+        backgroundColor: "#fff",
+        shadowColor: "#000",
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 3,
+    },
+
+    pillButtonText: {
+        color: '#111',
+        fontSize: 16,
+        fontWeight: "600",
+    },
 });
