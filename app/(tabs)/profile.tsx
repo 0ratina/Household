@@ -13,30 +13,83 @@ import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { router } from "expo-router";
 
+import { useMutation } from "@tanstack/react-query";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../../src/firebase";
+
+export type Profile = {
+    id: number;
+    HouseHoldID: number;
+    Name: string;
+    isOwner: boolean;
+    AvatarID: string;
+    AccountId: number;
+    isRequest: boolean;
+};
+
+async function saveProfile(profile: Profile) {
+    const { HouseHoldID, AccountId } = profile;
+    const ref = doc(db, `households/${HouseHoldID}/profiles/${AccountId}`);
+
+    await setDoc(
+        ref,
+        {
+            ...profile,
+        },
+        { merge: true }
+    );
+}
 
 export default function ProfileScreen() {
-       const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
+    const [username, setUsername] = useState("");
+
+    const HouseHoldID: number = 123;
+    const AccountId: number = 456;
+    const isOwner: boolean = false;
+    const isRequest: boolean = false;
+    const [avatarId] = useState<string>("");
+
+    const { mutate, isPending } = useMutation({
+        mutationFn: async (name: string) => {
+            if (!HouseHoldID || !AccountId) {
+                throw new Error("Saknar HouseHoldID eller AccountId.");
+            }
+
+            const profile: Profile = {
+                id: AccountId,
+                HouseHoldID,
+                Name: name.trim(),
+                isOwner,
+                AvatarID: avatarId,
+                AccountId,
+                isRequest,
+            };
+
+            await saveProfile(profile);
+        },
+        onSuccess: () => {
+            router.push("/createhousehold");
+        },
+        onError: (err: any) => {
+            console.error(err);
+            alert(err?.message ?? "Kunde inte spara profilen");
+        },
+    });
 
     const onSave = () => {
-        console.log("Spara", { username, password });
-
         if (!username.trim()) {
             alert("Ange ett användarnamn!");
             return;
         }
-
-        router.push("/createhousehold");
+        mutate(username);
     };
 
     const onClose = () => {
-        console.log("Stäng");
         router.back();
     };
 
     return (
         <View style={styles.container}>
-
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
                 style={{ flex: 1 }}
@@ -63,15 +116,7 @@ export default function ProfileScreen() {
                         value={username}
                         onChangeText={setUsername}
                         autoCapitalize="none"
-                    />
-
-                    <TextInput
-                        style={styles.inputCard}
-                        placeholder="Lösenord"
-                        placeholderTextColor="#7A7A7A"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
+                        editable={!isPending}
                     />
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -79,21 +124,19 @@ export default function ProfileScreen() {
             <View style={styles.bottomBar}>
                 <ActionButton
                     icon="add-circle-outline"
-                    label="Spara"
+                    label={isPending ? "Sparar..." : "Spara"}
                     dividerRight
-                     onPress={onSave}
+                    onPress={onSave}
                 />
 
                 <ActionButton
                     icon="close-circle-outline"
                     label="Stäng"
-                 onPress={onClose}
-
+                    onPress={onClose}
                 />
             </View>
         </View>
     );
-
 }
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
@@ -104,7 +147,6 @@ type ActionButtonProps = {
     onPress: () => void;
     dividerRight?: boolean;
 };
-
 
 function ActionButton({ icon, label, onPress, dividerRight }: ActionButtonProps) {
     return (
