@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, query, collection, getDocs } from "firebase/firestore";
 import { db, auth } from "../../src/firebase";
 
 export interface Profile {
@@ -71,6 +71,17 @@ async function saveProfile(profile: Profile) {
     );
 }
 
+async function getUsedAvatars(householdId: number) {
+    const qRef = collection(db, `households/${householdId}/profiles`);
+    const snap = await getDocs(query(qRef));
+    const usedAvatars = new Set<string>();
+    snap.forEach((d) => {
+        const a = (d.data()?.AvatarID as string) || "";
+        if (a) usedAvatars.add(a);
+    });
+    return usedAvatars;
+}
+
 export default function ProfileScreen() {
     const uid = auth.currentUser?.uid ?? null;
 
@@ -91,6 +102,12 @@ export default function ProfileScreen() {
         queryKey: ["profile", account?.HouseholdID, account?.AccountId],
         enabled: !!account?.HouseholdID && !!account?.AccountId,
         queryFn: () => getProfile(account!.HouseholdID, account!.AccountId),
+    });
+
+    const { data: usedAvatars } = useQuery({
+        queryKey: ["used-avatars", account?.HouseholdID],
+        enabled: !!account?.HouseholdID,
+        queryFn: () => getUsedAvatars(account!.HouseholdID),
     });
 
     const [username, setUsername] = useState("");
@@ -130,9 +147,15 @@ export default function ProfileScreen() {
         },
     });
 
-    const onSave = () => {
-        if (!username.trim()) {
-            alert("Ange ett användarnamn!");
+    const onSave = async () => {
+        if (!username.trim()) return alert("Ange ett användarnamn!");
+        if (!account?.HouseholdID || !account?.AccountId) return;
+
+        const used = await getUsedAvatars(account.HouseholdID);
+        const allowed =
+            !used.has(avatarId) || avatarId === existingProfile?.AvatarID;
+        if (!allowed) {
+            alert("Den här avataren är redan vald av någon i hushållet.");
             return;
         }
         mutate(username);
@@ -165,6 +188,9 @@ export default function ProfileScreen() {
                     <View style={styles.grid}>
                         {AVATARS.map((a) => {
                             const selected = a === avatarId;
+                            const takenByOther =
+                                usedAvatars?.has(a) && a !== (existingProfile?.AvatarID as AvatarEmoji);
+
                             return (
                                 <TouchableOpacity
                                     key={a}
@@ -172,12 +198,16 @@ export default function ProfileScreen() {
                                         styles.gridItem,
                                         { borderColor: selected ? AVATAR_COLORS[a] : "rgba(0,0,0,0.08)" },
                                         selected && { borderWidth: 2, transform: [{ scale: 1.02 }] },
+                                        takenByOther && { opacity: 0.35 },
                                     ]}
-                                    activeOpacity={0.9}
-                                    onPress={() => setAvatarId(a)}
-                                    disabled={formDisabled}
+                                    activeOpacity={takenByOther ? 1 : 0.9}
+                                    onPress={() => !takenByOther && setAvatarId(a)}
+                                    disabled={formDisabled || !!takenByOther}
                                 >
                                     <Text style={{ fontSize: 28 }}>{a}</Text>
+                                    {takenByOther && (
+                                        <Text style={{ fontSize: 10, marginTop: 2, color: "#666" }}>upptagen</Text>
+                                    )}
                                 </TouchableOpacity>
                             );
                         })}
@@ -293,7 +323,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 32,
         paddingVertical: 14,
         borderRadius: 40,
-        backgroundColor: "#fff",
+        backgroundColor: "#FFFFFF",
         shadowColor: "#000",
         shadowOpacity: 0.15,
         shadowRadius: 6,
