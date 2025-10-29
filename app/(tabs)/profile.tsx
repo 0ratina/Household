@@ -27,9 +27,6 @@ export interface Profile {
 type Account = {
     AccountId: number;
     HouseholdID: number;
-    isOwner?: boolean;
-    isRequest?: boolean;
-    AvatarID?: string;
 };
 
 const AVATARS = ["🦊", "🐷", "🐸", "🐥", "🐙", "🐬", "🦉", "🦄"] as const;
@@ -87,8 +84,6 @@ export default function ProfileScreen() {
 
     const {
         data: account,
-        isLoading: accountLoading,
-        error: accountError,
     } = useQuery({
         queryKey: ["account", uid],
         enabled: !!uid,
@@ -117,8 +112,6 @@ export default function ProfileScreen() {
         if (existingProfile?.Name) setUsername(existingProfile.Name);
         if (existingProfile?.AvatarID && AVATARS.includes(existingProfile.AvatarID as AvatarEmoji)) {
             setAvatarId(existingProfile.AvatarID as AvatarEmoji);
-        } else if (account?.AvatarID && AVATARS.includes(account.AvatarID as AvatarEmoji)) {
-            setAvatarId(account.AvatarID as AvatarEmoji);
         }
     }, [existingProfile, account]);
 
@@ -133,10 +126,10 @@ export default function ProfileScreen() {
                 id: account.AccountId,
                 HouseholdID: account.HouseholdID,
                 Name: name.trim(),
-                isOwner: existingProfile?.isOwner ?? account.isOwner ?? false,
+                isOwner: existingProfile?.isOwner ?? false,
                 AvatarID: avatarId,
                 AccountId: account.AccountId,
-                isRequest: existingProfile?.isRequest ?? account.isRequest ?? false,
+                isRequest: existingProfile?.isRequest ?? false,
             };
             await saveProfile(profile);
         },
