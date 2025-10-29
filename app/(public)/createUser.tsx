@@ -1,10 +1,11 @@
-import React, {useState, ComponentProps} from 'react'
-import {View, Text, TextInput, TouchableOpacity, Button, Alert, StyleSheet} from 'react-native'
-import {Ionicons} from '@expo/vector-icons'
-import {Link, router} from 'expo-router'
-import {useMutation} from '@tanstack/react-query'
-import {getAuth, createUserWithEmailAndPassword} from 'firebase/auth'
-import {auth} from '../../src/firebase'
+import React, { useState, ComponentProps } from 'react'
+import { View, Text, TextInput, TouchableOpacity, Button, Alert, StyleSheet } from 'react-native'
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from '@expo/vector-icons'
+import { Link, router } from 'expo-router'
+import { useMutation } from '@tanstack/react-query'
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../../src/firebase'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -15,16 +16,16 @@ type ActionButtonProps = {
    dividerRight?: boolean
 }
 
-function ActionButton({icon, label, onPress, dividerRight}: ActionButtonProps) {
+function ActionButton({ icon, label, onPress, dividerRight }: ActionButtonProps) {
    return (
       <TouchableOpacity style={[styles.action, dividerRight && styles.actionDivider]} onPress={onPress} activeOpacity={0.8}>
-         <Ionicons name={icon} size={22} style={{marginRight: 10}} />
+         <Ionicons name={icon} size={22} style={{ marginRight: 10 }} />
          <Text style={styles.actionLabel}>{label}</Text>
       </TouchableOpacity>
    )
 }
 
-async function createUser({email, password}: {email: string; password: string}) {
+async function createUser({ email, password }: { email: string; password: string }) {
    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
    return userCredential.user
 }
@@ -52,7 +53,7 @@ export default function Register() {
          Alert.alert('Fyll i e-post och lösenord.')
          return
       }
-      mutation.mutate({email, password})
+      mutation.mutate({ email, password })
    }
 
    const onClose = () => {
@@ -60,30 +61,34 @@ export default function Register() {
    }
 
    return (
-      <View style={styles.container}>
-         <View style={styles.card}>
-            <Text style={styles.header}>Registrera</Text>
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: "#f0f0f0" }}>
+         <Text style={styles.title}>Registrera</Text>
+         <View style={styles.container}>
+            <View style={styles.card}>
+               <Text style={styles.header}>Registrera</Text>
 
-            <TextInput style={styles.input} placeholder='E-post' keyboardType='email-address' value={email} onChangeText={setEmail} />
+               <TextInput style={styles.input} placeholder='E-post' keyboardType='email-address' value={email} onChangeText={setEmail} />
 
-            <TextInput style={styles.input} placeholder='Lösenord' secureTextEntry value={password} onChangeText={setPassword} />
+               <TextInput style={styles.input} placeholder='Lösenord' secureTextEntry value={password} onChangeText={setPassword} />
 
-            <Button title={mutation.isPending ? 'Skapar konto...' : 'Bli medlem'} onPress={onSave} disabled={mutation.isPending} />
+               <Button title={mutation.isPending ? 'Skapar konto...' : 'Bli medlem'} onPress={onSave} disabled={mutation.isPending} />
 
-            <Link style={styles.link} href='/login'>
-               Logga in
-            </Link>
+               <Link style={styles.link} href='/login'>
+                  Logga in
+               </Link>
+            </View>
+
+            <View style={styles.bottomBar}>
+               <ActionButton icon='add-circle-outline' label='Spara' dividerRight onPress={onSave} />
+               <ActionButton icon='close-circle-outline' label='Stäng' onPress={onClose} />
+            </View>
          </View>
-
-         <View style={styles.bottomBar}>
-            <ActionButton icon='add-circle-outline' label='Spara' dividerRight onPress={onSave} />
-            <ActionButton icon='close-circle-outline' label='Stäng' onPress={onClose} />
-         </View>
-      </View>
+      </SafeAreaView>
    )
 }
 
 const styles = StyleSheet.create({
+   title: { fontSize: 26, fontWeight: "700", textAlign: "center", marginTop: 8, marginBottom: 16 },
    container: {
       flex: 1,
       backgroundColor: '#f0f0f0',
@@ -96,7 +101,7 @@ const styles = StyleSheet.create({
       padding: 16,
       shadowColor: '#000',
       shadowOpacity: 0.1,
-      shadowOffset: {width: 0, height: 4},
+      shadowOffset: { width: 0, height: 4 },
       shadowRadius: 6,
    },
    header: {
@@ -115,7 +120,7 @@ const styles = StyleSheet.create({
       color: '#111',
       shadowColor: '#000',
       shadowOpacity: 0.05,
-      shadowOffset: {width: 0, height: 2},
+      shadowOffset: { width: 0, height: 2 },
       shadowRadius: 3,
    },
    emojiRow: {
