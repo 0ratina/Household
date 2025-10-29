@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet } from "react-native";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../src/firebase";
+import { router } from "expo-router";
+import { useState } from "react";
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet, } from "react-native";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../../src/firebase";
 
 interface Task {
     id?: string;
@@ -12,8 +12,9 @@ interface Task {
     repeatDay: number;
     value: number;
     createdAt?: Date;
-    updatedAt?: Date;
 }
+
+
 
 type PillProps = { label: string | number; tone?: "default" | "repeat" | "muted"; onPress?: () => void };
 
@@ -33,60 +34,32 @@ const Pill = ({ label, tone = "default", onPress }: PillProps) => {
     );
 };
 
-export default function UpdateTaskScreen() {
-    const { id } = useLocalSearchParams();
+export default function NewTaskScreen() {
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
     const [repeatDay, setRepeatDay] = useState(1);
     const [value, setValue] = useState(1);
 
-    // DETTA HAR JAG ÄNDRAT!!!!!!! — hämta task-data från Firestore
-    useEffect(() => {
-        const fetchTask = async () => {
-            if (!id) return;
+    const onSave = async () => {
 
-            try {
-                const docRef = doc(db, "tasks", id as string);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    const data = docSnap.data() as Task;
-                    setTitle(data.title);
-                    setDesc(data.desc || "");
-                    setRepeatDay(data.repeatDay);
-                    setValue(data.value);
-                } else {
-                    alert("Task hittades inte!");
-                }
-            } catch (err) {
-                console.error("Fel vid hämtning:", err);
-            }
-        };
-
-        fetchTask();
-    }, [id]);
-
-    // DETTA HAR JAG ÄNDRAT!!!!!!! — uppdatera task i Firestore
-    const onUpdate = async () => {
         if (!title.trim()) return alert("Skriv en titel!");
 
+        const newTask: Task = {
+            title,
+            desc,
+            repeatDay,
+            value,
+            createdAt: new Date(),
+        };
+
         try {
-            const docRef = doc(db, "tasks", id as string);
-
-            await updateDoc(docRef, {
-                title,
-                desc,
-                repeatDay,
-                value,
-                updatedAt: new Date(),
-            });
-
-            console.log("Task uppdaterad i Firebase!");
-            alert("Task uppdaterad! ✅");
+            await addDoc(collection(db, "tasks"), newTask);
+            console.log("Ny task sparad i Firebase!");
+            alert("Task sparad! ✅");
             router.back();
         } catch (err) {
-            console.error("Fel vid uppdatering:", err);
-            alert("Kunde inte uppdatera tasken 😢");
+            console.error("Fel vid sparande:", err);
+            alert("Kunde inte spara tasken 😢");
         }
     };
 
@@ -150,9 +123,9 @@ export default function UpdateTaskScreen() {
                 </ScrollView>
             </KeyboardAvoidingView>
             <View style={styles.bottomBar}>
-                <TouchableOpacity style={[styles.action, styles.actionDivider]} activeOpacity={0.8} onPress={onUpdate}>
+                <TouchableOpacity style={[styles.action, styles.actionDivider]} activeOpacity={0.8} onPress={onSave}>
                     <Ionicons name="add-circle-outline" size={22} style={{ marginRight: 10 }} />
-                    <Text style={styles.actionLabel}>Ändra</Text>
+                    <Text style={styles.actionLabel}>Spara</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.action} activeOpacity={0.8} onPress={onClose}>

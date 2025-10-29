@@ -7,14 +7,14 @@ export default function TabsLayout() {
          <Tabs.Screen
             name='accountOverview'
             options={{
-               title: 'Konto',
+               title: 'Konto', headerTitleStyle: { fontSize: 24, fontWeight: "600" },
                tabBarIcon: ({ color, size }) => <Ionicons name='home-outline' color={color} size={size} />,
             }}
          />
          <Tabs.Screen
             name='statistics'
             options={{
-               title: 'Statistik',
+               title: 'Statistik', headerTitleStyle: { fontSize: 24, fontWeight: "600" },
                tabBarIcon: ({ color, size }) => <Ionicons name='bar-chart-outline' color={color} size={size} />,
             }}
          />
