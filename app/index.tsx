@@ -32,6 +32,9 @@ export default function HomeScreen() {
          <Link href='/householdoverview' asChild>
             <Button title='householdoverview' />
          </Link>
+         <Link href='/accountOverview' asChild>
+            <Button title='konto' />
+         </Link>
       </View>
    )
 }
