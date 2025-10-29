@@ -12,7 +12,7 @@ import {
 import { router } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { doc, getDoc, setDoc, query, collection, getDocs, collectionGroup, where } from "firebase/firestore";
-import { db, auth } from "../../src/firebase";
+import { db, auth } from "../../../src/firebase";
 
 export interface Profile {
     id: number;
