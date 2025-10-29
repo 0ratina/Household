@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
-import { authKey, bindAuthToQueryClient } from "../src/auth/bindAuthStateChanged";
-import { auth } from "../src/firebase";
+import { authKey, bindAuthToQueryClient } from "../../src/auth/bindAuthStateChanged";
+import { auth } from "../../src/firebase";
 
 const queryClient = new QueryClient({
   defaultOptions: {
