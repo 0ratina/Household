@@ -1,10 +1,11 @@
-import {Ionicons} from '@expo/vector-icons'
-import {Link, router} from 'expo-router'
-import React, {ComponentProps, useState} from 'react'
-import {View, Text, TextInput, TouchableOpacity, Button, Alert, StyleSheet} from 'react-native'
-import {useMutation} from '@tanstack/react-query'
-import {getAuth, signInWithEmailAndPassword} from 'firebase/auth'
-import {auth} from '../../src/firebase'
+import { Ionicons } from '@expo/vector-icons'
+import { Link, router } from 'expo-router'
+import React, { ComponentProps, useState } from 'react'
+import { View, Text, TextInput, TouchableOpacity, Button, Alert, StyleSheet } from 'react-native'
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useMutation } from '@tanstack/react-query'
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../../src/firebase'
 
 type IconName = ComponentProps<typeof Ionicons>['name']
 
@@ -15,16 +16,16 @@ type ActionButtonProps = {
    dividerRight?: boolean
 }
 
-function ActionButton({icon, label, onPress, dividerRight}: ActionButtonProps) {
+function ActionButton({ icon, label, onPress, dividerRight }: ActionButtonProps) {
    return (
       <TouchableOpacity style={[styles.action, dividerRight && styles.actionDivider]} onPress={onPress} activeOpacity={0.8}>
-         <Ionicons name={icon} size={22} style={{marginRight: 10}} />
+         <Ionicons name={icon} size={22} style={{ marginRight: 10 }} />
          <Text style={styles.actionLabel}>{label}</Text>
       </TouchableOpacity>
    )
 }
 
-async function signInUser({email, password}: {email: string; password: string}) {
+async function signInUser({ email, password }: { email: string; password: string }) {
    const userCredential = await signInWithEmailAndPassword(auth, email, password)
    return userCredential.user
 }
@@ -52,7 +53,7 @@ export default function Login() {
          Alert.alert('Fyll i användarnamn och lösenord.')
          return
       }
-      mutation.mutate({email, password})
+      mutation.mutate({ email, password })
    }
 
    const onClose = () => {
@@ -60,37 +61,41 @@ export default function Login() {
    }
 
    return (
-      <View style={styles.container}>
-         <View style={styles.card}>
-            <Text style={styles.header}>Logga in</Text>
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: "#f0f0f0" }}>
+         <Text style={styles.title}>Logga in</Text>
+         <View style={styles.container}>
+            <View style={styles.card}>
+               <Text style={styles.header}>Logga in</Text>
 
-            <TextInput style={styles.input} placeholder='Användarnamn' placeholderTextColor='#7A7A7A' value={email} onChangeText={setUsername} />
+               <TextInput style={styles.input} placeholder='Användarnamn' placeholderTextColor='#7A7A7A' value={email} onChangeText={setUsername} />
 
-            <TextInput
-               style={styles.input}
-               placeholder='Lösenord'
-               placeholderTextColor='#7A7A7A'
-               secureTextEntry
-               value={password}
-               onChangeText={setPassword}
-            />
+               <TextInput
+                  style={styles.input}
+                  placeholder='Lösenord'
+                  placeholderTextColor='#7A7A7A'
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+               />
 
-            <Button title={mutation.isPending ? 'Loggar in...' : 'Logga in'} onPress={onLogin} disabled={mutation.isPending} />
+               <Button title={mutation.isPending ? 'Loggar in...' : 'Logga in'} onPress={onLogin} disabled={mutation.isPending} />
 
-            <Link style={styles.link} href='/createUser'>
-               Bli medlem
-            </Link>
+               <Link style={styles.link} href='/createUser'>
+                  Bli medlem
+               </Link>
+            </View>
+
+            <View style={styles.bottomBar}>
+               <ActionButton icon='add-circle-outline' label='Logga in' dividerRight onPress={onLogin} />
+               <ActionButton icon='close-circle-outline' label='Stäng' onPress={onClose} />
+            </View>
          </View>
-
-         <View style={styles.bottomBar}>
-            <ActionButton icon='add-circle-outline' label='Logga in' dividerRight onPress={onLogin} />
-            <ActionButton icon='close-circle-outline' label='Stäng' onPress={onClose} />
-         </View>
-      </View>
+      </SafeAreaView>
    )
 }
 
 const styles = StyleSheet.create({
+   title: { fontSize: 26, fontWeight: "600", textAlign: "center", marginTop: 8, marginBottom: 16 },
    container: {
       flex: 1,
       backgroundColor: '#f0f0f0',
@@ -103,7 +108,7 @@ const styles = StyleSheet.create({
       padding: 16,
       shadowColor: '#000',
       shadowOpacity: 0.1,
-      shadowOffset: {width: 0, height: 4},
+      shadowOffset: { width: 0, height: 4 },
       shadowRadius: 6,
    },
    header: {
@@ -122,7 +127,7 @@ const styles = StyleSheet.create({
       color: '#111',
       shadowColor: '#000',
       shadowOpacity: 0.05,
-      shadowOffset: {width: 0, height: 2},
+      shadowOffset: { width: 0, height: 2 },
       shadowRadius: 3,
    },
    bottomBar: {
