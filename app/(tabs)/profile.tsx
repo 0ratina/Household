@@ -161,8 +161,6 @@ export default function ProfileScreen() {
         mutate(username);
     };
 
-    const onClose = () => router.back();
-
     const formDisabled = isPending || profileLoading;
 
     return (
