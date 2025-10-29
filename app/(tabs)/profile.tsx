@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { doc, getDoc, setDoc, query, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, query, collection, getDocs, collectionGroup, where } from "firebase/firestore";
 import { db, auth } from "../../src/firebase";
 
 export interface Profile {
@@ -26,7 +26,6 @@ export interface Profile {
 
 type Account = {
     AccountId: number;
-    HouseholdID: number;
 };
 
 const AVATARS = ["🦊", "🐷", "🐸", "🐥", "🐙", "🐬", "🦉", "🦄"] as const;
@@ -56,16 +55,17 @@ async function getProfile(houseId: number, accountId: number) {
     return snap.exists() ? (snap.data() as Profile) : null;
 }
 
+async function getProfilesForAccount(accountId: number) {
+    const qRef = collectionGroup(db, "profiles");
+    const q = query(qRef, where("AccountId", "==", accountId));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => d.data() as Profile);
+}
+
 async function saveProfile(profile: Profile) {
     const { HouseholdID, AccountId } = profile;
     const ref = doc(db, `households/${HouseholdID}/profiles/${AccountId}`);
-    await setDoc(
-        ref,
-        {
-            ...profile,
-        },
-        { merge: true }
-    );
+    await setDoc(ref, { ...profile }, { merge: true });
 }
 
 async function getUsedAvatars(householdId: number) {
@@ -78,7 +78,6 @@ async function getUsedAvatars(householdId: number) {
     });
     return usedAvatars;
 }
-
 export default function ProfileScreen() {
     const uid = auth.currentUser?.uid ?? null;
 
@@ -90,19 +89,19 @@ export default function ProfileScreen() {
         queryFn: () => getAccount(uid!),
     });
 
-    const {
-        data: existingProfile,
-        isLoading: profileLoading,
-    } = useQuery({
-        queryKey: ["profile", account?.HouseholdID, account?.AccountId],
-        enabled: !!account?.HouseholdID && !!account?.AccountId,
-        queryFn: () => getProfile(account!.HouseholdID, account!.AccountId),
+    const { data: profiles } = useQuery({
+        queryKey: ["profiles", account?.AccountId],
+        enabled: !!account?.AccountId,
+        queryFn: () => getProfilesForAccount(account!.AccountId),
     });
 
+    const existingProfile = profiles?.[0] ?? null;
+    const householdId = existingProfile?.HouseholdID ?? null;
+
     const { data: usedAvatars } = useQuery({
-        queryKey: ["used-avatars", account?.HouseholdID],
-        enabled: !!account?.HouseholdID,
-        queryFn: () => getUsedAvatars(account!.HouseholdID),
+        queryKey: ["used-avatars", householdId],
+        enabled: !!householdId,
+        queryFn: () => getUsedAvatars(householdId!),
     });
 
     const [username, setUsername] = useState("");
@@ -110,21 +109,24 @@ export default function ProfileScreen() {
 
     useEffect(() => {
         if (existingProfile?.Name) setUsername(existingProfile.Name);
-        if (existingProfile?.AvatarID && AVATARS.includes(existingProfile.AvatarID as AvatarEmoji)) {
+        if (
+            existingProfile?.AvatarID &&
+            AVATARS.includes(existingProfile.AvatarID as AvatarEmoji)
+        ) {
             setAvatarId(existingProfile.AvatarID as AvatarEmoji);
         }
-    }, [existingProfile, account]);
+    }, [existingProfile]);
 
     const profileColor = useMemo(() => AVATAR_COLORS[avatarId], [avatarId]);
 
     const { mutate, isPending } = useMutation({
         mutationFn: async (name: string) => {
-            if (!account?.HouseholdID || !account?.AccountId) {
+            if (!householdId || !account?.AccountId) {
                 throw new Error("Saknar HouseholdID eller AccountId.");
             }
             const profile: Profile = {
                 id: account.AccountId,
-                HouseholdID: account.HouseholdID,
+                HouseholdID: householdId,
                 Name: name.trim(),
                 isOwner: existingProfile?.isOwner ?? false,
                 AvatarID: avatarId,
@@ -142,9 +144,9 @@ export default function ProfileScreen() {
 
     const onSave = async () => {
         if (!username.trim()) return alert("Ange ett användarnamn!");
-        if (!account?.HouseholdID || !account?.AccountId) return;
+        if (!householdId || !account?.AccountId) return;
 
-        const used = await getUsedAvatars(account.HouseholdID);
+        const used = await getUsedAvatars(householdId);
         const allowed =
             !used.has(avatarId) || avatarId === existingProfile?.AvatarID;
         if (!allowed) {
@@ -154,7 +156,7 @@ export default function ProfileScreen() {
         mutate(username);
     };
 
-    const formDisabled = isPending || profileLoading;
+    const formDisabled = isPending;
 
     return (
         <View style={styles.container}>
@@ -164,14 +166,15 @@ export default function ProfileScreen() {
                 keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
             >
                 <ScrollView contentContainerStyle={styles.content}>
-
                     <TouchableOpacity
                         activeOpacity={0.8}
                         style={styles.avatarWrap}
                         onPress={() => { }}
                         disabled={formDisabled}
                     >
-                        <View style={[styles.avatarCircle, { borderColor: profileColor }]}>
+                        <View
+                            style={[styles.avatarCircle, { borderColor: profileColor }]}
+                        >
                             <Text style={{ fontSize: 56 }}>{avatarId}</Text>
                         </View>
                     </TouchableOpacity>
@@ -180,15 +183,23 @@ export default function ProfileScreen() {
                         {AVATARS.map((a) => {
                             const selected = a === avatarId;
                             const takenByOther =
-                                usedAvatars?.has(a) && a !== (existingProfile?.AvatarID as AvatarEmoji);
+                                usedAvatars?.has(a) &&
+                                a !== (existingProfile?.AvatarID as AvatarEmoji);
 
                             return (
                                 <TouchableOpacity
                                     key={a}
                                     style={[
                                         styles.gridItem,
-                                        { borderColor: selected ? AVATAR_COLORS[a] : "rgba(0,0,0,0.08)" },
-                                        selected && { borderWidth: 2, transform: [{ scale: 1.02 }] },
+                                        {
+                                            borderColor: selected
+                                                ? AVATAR_COLORS[a]
+                                                : "rgba(0,0,0,0.08)",
+                                        },
+                                        selected && {
+                                            borderWidth: 2,
+                                            transform: [{ scale: 1.02 }],
+                                        },
                                         takenByOther && { opacity: 0.35 },
                                     ]}
                                     activeOpacity={takenByOther ? 1 : 0.9}
@@ -197,7 +208,15 @@ export default function ProfileScreen() {
                                 >
                                     <Text style={{ fontSize: 28 }}>{a}</Text>
                                     {takenByOther && (
-                                        <Text style={{ fontSize: 10, marginTop: 2, color: "#666" }}>upptagen</Text>
+                                        <Text
+                                            style={{
+                                                fontSize: 10,
+                                                marginTop: 2,
+                                                color: "#666",
+                                            }}
+                                        >
+                                            upptagen
+                                        </Text>
                                     )}
                                 </TouchableOpacity>
                             );
@@ -213,7 +232,6 @@ export default function ProfileScreen() {
                         autoCapitalize="none"
                         editable={!formDisabled}
                     />
-                    {profileLoading && <Text style={{ color: "#666", marginTop: 6 }}>Laddar profil…</Text>}
                 </ScrollView>
             </KeyboardAvoidingView>
 
