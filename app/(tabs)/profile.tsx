@@ -251,14 +251,6 @@ export default function ProfileScreen() {
     );
 }
 
-function Centered({ children }: { children: React.ReactNode }) {
-    return (
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 20 }}>
-            {children}
-        </View>
-    );
-}
-
 const BG = "#EFEFEF";
 
 const styles = StyleSheet.create({
