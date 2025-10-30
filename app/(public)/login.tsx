@@ -12,8 +12,8 @@ async function signInUser({email, password}: {email: string; password: string}) 
 }
 
 export default function Login() {
-   const [email, setUsername] = useState('')
-   const [password, setPassword] = useState('')
+   const [email, setUsername] = useState('kalle.pulli@hotmail.com')
+   const [password, setPassword] = useState('Test123')
 
    const mutation = useMutation({
       mutationFn: signInUser,
