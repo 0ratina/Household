@@ -52,12 +52,6 @@ const AVATAR_COLORS: Record<AvatarEmoji, string> = {
     "🦄": "#E91E63",
 };
 
-async function getGlobalProfile(uid: string) {
-    const ref = doc(db, "profiles", uid);
-    const snap = await getDoc(ref);
-    return snap.exists() ? (snap.data() as GlobalProfile) : null;
-}
-
 async function getProfilesForAccount(accountId: string) {
     const qRef = collectionGroup(db, "profiles");
     const qy = query(qRef, where("AccountId", "==", accountId));
@@ -117,12 +111,6 @@ async function saveProfileChanges(opts: {
 export default function ProfileScreen() {
     const uid = auth.currentUser?.uid ?? null;
 
-    const { data: globalProfile } = useQuery({
-        queryKey: ["global-profile", uid],
-        enabled: !!uid,
-        queryFn: () => getGlobalProfile(uid!),
-    });
-
     const { data: myProfiles = [] } = useQuery({
         queryKey: ["profiles-by-account", uid],
         enabled: !!uid,
@@ -162,7 +150,6 @@ export default function ProfileScreen() {
     useEffect(() => {
         const name =
             existingProfile?.Name ??
-            globalProfile?.Name ??
             "";
         setUsername(name);
 
@@ -174,7 +161,7 @@ export default function ProfileScreen() {
                 setAvatarId(existingProfile.AvatarID as AvatarEmoji);
             }
         }
-    }, [existingProfile, globalProfile, hasTouchedAvatar]);
+    }, [existingProfile, hasTouchedAvatar]);
 
     const profileColor = useMemo(() => AVATAR_COLORS[avatarId], [avatarId]);
 
@@ -209,7 +196,7 @@ export default function ProfileScreen() {
     const onSave = () => {
         if (!username.trim()) return alert("Ange ett användarnamn!");
 
-        const prevName = existingProfile?.Name ?? globalProfile?.Name ?? "";
+        const prevName = existingProfile?.Name ?? "";
         const prevAvatar = existingProfile?.AvatarID as AvatarEmoji | undefined;
 
         const nameChanged = username.trim() !== prevName.trim();
