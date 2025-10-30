@@ -1,9 +1,9 @@
-import { View, Text, TouchableOpacity, FlatList, Button, StyleSheet } from 'react-native'
-import { router } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
-import { db } from '../../../src/firebase'
-import { collection, getDocs } from 'firebase/firestore'
-import { useQuery } from '@tanstack/react-query'
+import {View, Text, TouchableOpacity, FlatList, Button, StyleSheet} from 'react-native'
+import {router} from 'expo-router'
+import {Ionicons} from '@expo/vector-icons'
+import {db} from '../../src/firebase'
+import {collection, getDocs} from 'firebase/firestore'
+import {useQuery} from '@tanstack/react-query'
 
 interface Household {
    id: string
@@ -53,12 +53,12 @@ export default function AccountOverview() {
             </View>
 
             {query.data.length === 0 ? (
-               <Text style={{ textAlign: 'center' }}>Inga hushåll hittades.</Text>
+               <Text style={{textAlign: 'center'}}>Inga hushåll hittades.</Text>
             ) : (
                <FlatList
                   data={query.data}
                   keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
+                  renderItem={({item}) => (
                      <TouchableOpacity style={styles.householdItem} onPress={() => router.push(`/household?id=${item.id}`)}>
                         <Text style={styles.householdName}>{item.Name}</Text>
                      </TouchableOpacity>
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
       padding: 16,
       shadowColor: '#000',
       shadowOpacity: 0.1,
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: {width: 0, height: 4},
       shadowRadius: 6,
    },
    headerContainer: {
