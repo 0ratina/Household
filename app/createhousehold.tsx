@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { router } from "expo-router"; 
+import { router } from "expo-router";
+import { createHousehold } from '@/api/Household';
+import { useMutation } from "@tanstack/react-query";
+
+
 
 export default function Createhousehold () {
   const [householdName, setHouseholdName] = useState('');
-  const [createdCode, setCreatedCode] = useState<string | null>(null);
+  const [createdCode, setCreatedCode] = useState('');
 
-  const handleCreate = () => {
-    if (householdName.trim() === '') return;
-
-    //mock  Skapa  hushållskod 
-    const randomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
-    setCreatedCode(randomCode);
-  };
+  const mutation = useMutation({
+    mutationFn: createHousehold,
+  });
 
   return (
     <View style={styles.container}>
@@ -27,8 +27,15 @@ export default function Createhousehold () {
             onChangeText={setHouseholdName}
             style={styles.input}
           />
+          <Text style={styles.label}>Hushållets kod:</Text>
+          <TextInput
+            placeholder="Skriv in kod"
+            value={createdCode}
+            onChangeText={setCreatedCode}
+            style={styles.input}
+          />
 
-          <TouchableOpacity style={styles.button} onPress={handleCreate}>
+          <TouchableOpacity style={styles.button} onPress={() => mutation.mutate({ householdName, createdCode })}>
             <Text style={styles.buttonText}>Skapa hushåll</Text>
           </TouchableOpacity>
         </>
