@@ -1,5 +1,5 @@
-import { onAuthStateChanged } from "firebase/auth";
 import type { QueryClient } from "@tanstack/react-query";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
 
 export const authKey = ["auth", "user"] as const;
