@@ -7,26 +7,36 @@ import {
     StyleSheet,
     ScrollView,
     KeyboardAvoidingView,
-    Platform
+    Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { doc, getDoc, setDoc, query, collection, getDocs, collectionGroup, where } from "firebase/firestore";
+import {
+    doc,
+    getDoc,
+    writeBatch,
+    query,
+    collection,
+    getDocs,
+    collectionGroup,
+    where,
+} from "firebase/firestore";
 import { db, auth } from "../../../src/firebase";
 
 export interface Profile {
-    id: number;
-    HouseholdID: number;
+    id: string;
+    HouseholdID: string;
     Name: string;
     isOwner: boolean;
     AvatarID: string;
-    AccountId: number;
+    AccountId: string;
     isRequest: boolean;
 }
 
-type Account = {
-    AccountId: number;
-};
+export interface GlobalProfile {
+    Name: string;
+    DefaultAvatarID?: string;
+}
 
 const AVATARS = ["🦊", "🐷", "🐸", "🐥", "🐙", "🐬", "🦉", "🦄"] as const;
 type AvatarEmoji = (typeof AVATARS)[number];
@@ -42,33 +52,26 @@ const AVATAR_COLORS: Record<AvatarEmoji, string> = {
     "🦄": "#E91E63",
 };
 
-async function getAccount(uid: string) {
-    const ref = doc(db, `accounts/${uid}`);
+async function getGlobalProfile(uid: string) {
+    const ref = doc(db, "profiles", uid);
     const snap = await getDoc(ref);
-    if (!snap.exists()) throw new Error("Kunde inte hitta konto.");
-    return snap.data() as Account;
+    return snap.exists() ? (snap.data() as GlobalProfile) : null;
 }
 
-async function getProfile(houseId: number, accountId: number) {
+async function getProfilesForAccount(accountId: string) {
+    const qRef = collectionGroup(db, "profiles");
+    const qy = query(qRef, where("AccountId", "==", accountId));
+    const snap = await getDocs(qy);
+    return snap.docs.map((d) => d.data() as Profile);
+}
+
+async function getProfile(houseId: string, accountId: string) {
     const ref = doc(db, `households/${houseId}/profiles/${accountId}`);
     const snap = await getDoc(ref);
     return snap.exists() ? (snap.data() as Profile) : null;
 }
 
-async function getProfilesForAccount(accountId: number) {
-    const qRef = collectionGroup(db, "profiles");
-    const q = query(qRef, where("AccountId", "==", accountId));
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => d.data() as Profile);
-}
-
-async function saveProfile(profile: Profile) {
-    const { HouseholdID, AccountId } = profile;
-    const ref = doc(db, `households/${HouseholdID}/profiles/${AccountId}`);
-    await setDoc(ref, { ...profile }, { merge: true });
-}
-
-async function getUsedAvatars(householdId: number) {
+async function getUsedAvatars(householdId: string) {
     const qRef = collection(db, `households/${householdId}/profiles`);
     const snap = await getDocs(query(qRef));
     const usedAvatars = new Set<string>();
@@ -78,85 +81,150 @@ async function getUsedAvatars(householdId: number) {
     });
     return usedAvatars;
 }
+
+async function saveProfileChanges(opts: {
+    uid: string;
+    newName: string;
+    selectedHouseholdId: string | null;
+    newAvatar?: AvatarEmoji;
+}) {
+    const { uid, newName, selectedHouseholdId, newAvatar } = opts;
+    const batch = writeBatch(db);
+
+    const globalRef = doc(db, "profiles", uid);
+    batch.set(
+        globalRef,
+        { Name: newName.trim() },
+        { merge: true }
+    );
+
+    if (selectedHouseholdId) {
+        const memberRef = doc(db, `households/${selectedHouseholdId}/profiles/${uid}`);
+        batch.set(
+            memberRef,
+            {
+                AccountId: uid,
+                HouseholdID: selectedHouseholdId,
+                ...(newAvatar ? { AvatarID: newAvatar } : {}),
+            },
+            { merge: true }
+        );
+    }
+
+    await batch.commit();
+}
+
 export default function ProfileScreen() {
     const uid = auth.currentUser?.uid ?? null;
 
-    const {
-        data: account,
-    } = useQuery({
-        queryKey: ["account", uid],
+    const { data: globalProfile } = useQuery({
+        queryKey: ["global-profile", uid],
         enabled: !!uid,
-        queryFn: () => getAccount(uid!),
+        queryFn: () => getGlobalProfile(uid!),
     });
 
-    const { data: profiles } = useQuery({
-        queryKey: ["profiles", account?.AccountId],
-        enabled: !!account?.AccountId,
-        queryFn: () => getProfilesForAccount(account!.AccountId),
+    const { data: myProfiles = [] } = useQuery({
+        queryKey: ["profiles-by-account", uid],
+        enabled: !!uid,
+        queryFn: () => getProfilesForAccount(uid!),
     });
 
-    const existingProfile = profiles?.[0] ?? null;
-    const householdId = existingProfile?.HouseholdID ?? null;
+    const [selectedHouseholdId, setSelectedHouseholdId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!selectedHouseholdId && myProfiles.length > 0) {
+            setSelectedHouseholdId(myProfiles[0].HouseholdID);
+        }
+    }, [myProfiles, selectedHouseholdId]);
+
+    useEffect(() => {
+        setHasTouchedAvatar(false);
+    }, [selectedHouseholdId]);
+
+    const { data: existingProfile } = useQuery({
+        queryKey: ["profile", selectedHouseholdId, uid],
+        enabled: !!uid && !!selectedHouseholdId,
+        queryFn: () => getProfile(selectedHouseholdId!, uid!),
+    });
 
     const { data: usedAvatars } = useQuery({
-        queryKey: ["used-avatars", householdId],
-        enabled: !!householdId,
-        queryFn: () => getUsedAvatars(householdId!),
+        queryKey: ["used-avatars", selectedHouseholdId],
+        enabled: !!selectedHouseholdId,
+        queryFn: () => getUsedAvatars(selectedHouseholdId!),
     });
 
     const [username, setUsername] = useState("");
     const [avatarId, setAvatarId] = useState<AvatarEmoji>("🦊");
+    const [hasTouchedAvatar, setHasTouchedAvatar] = useState(false);
+
+
 
     useEffect(() => {
-        if (existingProfile?.Name) setUsername(existingProfile.Name);
-        if (
-            existingProfile?.AvatarID &&
-            AVATARS.includes(existingProfile.AvatarID as AvatarEmoji)
-        ) {
-            setAvatarId(existingProfile.AvatarID as AvatarEmoji);
+        const name =
+            existingProfile?.Name ??
+            globalProfile?.Name ??
+            "";
+        setUsername(name);
+
+        if (!hasTouchedAvatar) {
+            if (
+                existingProfile?.AvatarID &&
+                AVATARS.includes(existingProfile.AvatarID as AvatarEmoji)
+            ) {
+                setAvatarId(existingProfile.AvatarID as AvatarEmoji);
+            }
         }
-    }, [existingProfile]);
+    }, [existingProfile, globalProfile, hasTouchedAvatar]);
 
     const profileColor = useMemo(() => AVATAR_COLORS[avatarId], [avatarId]);
 
     const { mutate, isPending } = useMutation({
-        mutationFn: async (name: string) => {
-            if (!householdId || !account?.AccountId) {
-                throw new Error("Saknar HouseholdID eller AccountId.");
+        mutationFn: async ({ name, avatar }: { name: string; avatar: AvatarEmoji }) => {
+            if (!uid) throw new Error("Ingen användare inloggad.");
+
+            if (selectedHouseholdId) {
+                const used = await getUsedAvatars(selectedHouseholdId);
+                const allowed = !used.has(avatar) || avatar === existingProfile?.AvatarID;
+                if (!allowed) {
+                    throw new Error("Den här avataren är redan vald av någon i hushållet.");
+                }
             }
-            const profile: Profile = {
-                id: account.AccountId,
-                HouseholdID: householdId,
-                Name: name.trim(),
-                isOwner: existingProfile?.isOwner ?? false,
-                AvatarID: avatarId,
-                AccountId: account.AccountId,
-                isRequest: existingProfile?.isRequest ?? false,
-            };
-            await saveProfile(profile);
+
+            await saveProfileChanges({
+                uid,
+                newName: name,
+                selectedHouseholdId,
+                newAvatar: selectedHouseholdId ? avatar : undefined,
+            });
         },
-        onSuccess: () => router.push("/createhousehold"),
+        onSuccess: () => router.back(),
         onError: (err: any) => {
             console.error(err);
-            alert(err?.message ?? "Kunde inte spara profilen");
+            alert(err?.message ?? "Kunde inte uppdatera profilen");
         },
     });
 
-    const onSave = async () => {
-        if (!username.trim()) return alert("Ange ett användarnamn!");
-        if (!householdId || !account?.AccountId) return;
 
-        const used = await getUsedAvatars(householdId);
-        const allowed =
-            !used.has(avatarId) || avatarId === existingProfile?.AvatarID;
-        if (!allowed) {
-            alert("Den här avataren är redan vald av någon i hushållet.");
+
+    const onSave = () => {
+        if (!username.trim()) return alert("Ange ett användarnamn!");
+
+        const prevName = existingProfile?.Name ?? globalProfile?.Name ?? "";
+        const prevAvatar = existingProfile?.AvatarID as AvatarEmoji | undefined;
+
+        const nameChanged = username.trim() !== prevName.trim();
+        const avatarChanged = !!selectedHouseholdId && avatarId !== prevAvatar;
+
+        if (!nameChanged && !avatarChanged) {
+            alert("Inga ändringar att spara.");
             return;
         }
-        mutate(username);
+
+        mutate({ name: username, avatar: avatarId });
     };
 
-    const formDisabled = isPending;
+    const nameDisabled = isPending || !uid;
+    const avatarDisabled = isPending || !selectedHouseholdId;
 
     return (
         <View style={styles.container}>
@@ -166,15 +234,43 @@ export default function ProfileScreen() {
                 keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
             >
                 <ScrollView contentContainerStyle={styles.content}>
+                    {myProfiles.length > 1 && (
+                        <View style={[styles.inputCard, { paddingVertical: 10 }]}>
+                            <Text style={{ fontWeight: "600", marginBottom: 8 }}>Välj hushåll</Text>
+                            <View style={styles.householdRow}>
+                                {myProfiles.map((p) => {
+                                    const active = p.HouseholdID === selectedHouseholdId;
+                                    return (
+                                        <TouchableOpacity
+                                            key={p.HouseholdID}
+                                            onPress={() => setSelectedHouseholdId(p.HouseholdID)}
+                                            style={[
+                                                styles.householdPill,
+                                                active && { backgroundColor: "#111" },
+                                            ]}
+                                        >
+                                            <Text style={{ color: active ? "#fff" : "#111", fontWeight: "600" }}>
+                                                {p.HouseholdID}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    )}
+
+                    {!selectedHouseholdId && (
+                        <Text style={{ color: "#555", marginBottom: 12, textAlign: "center" }}>
+                            Inget hushåll valt – Du kan ändra <Text style={{ fontWeight: "700" }}>namn</Text> nu.
+                            Din Avatar kan ändras när du valt ett hushåll.
+                        </Text>
+                    )}
+
                     <TouchableOpacity
                         activeOpacity={0.8}
                         style={styles.avatarWrap}
-                        onPress={() => { }}
-                        disabled={formDisabled}
                     >
-                        <View
-                            style={[styles.avatarCircle, { borderColor: profileColor }]}
-                        >
+                        <View style={[styles.avatarCircle, { borderColor: profileColor, opacity: avatarDisabled ? 0.4 : 1 }]}>
                             <Text style={{ fontSize: 56 }}>{avatarId}</Text>
                         </View>
                     </TouchableOpacity>
@@ -183,38 +279,27 @@ export default function ProfileScreen() {
                         {AVATARS.map((a) => {
                             const selected = a === avatarId;
                             const takenByOther =
-                                usedAvatars?.has(a) &&
-                                a !== (existingProfile?.AvatarID as AvatarEmoji);
+                                !!selectedHouseholdId &&
+                                !!(usedAvatars?.has(a) && a !== (existingProfile?.AvatarID as AvatarEmoji));
 
                             return (
                                 <TouchableOpacity
                                     key={a}
                                     style={[
                                         styles.gridItem,
-                                        {
-                                            borderColor: selected
-                                                ? AVATAR_COLORS[a]
-                                                : "rgba(0,0,0,0.08)",
-                                        },
-                                        selected && {
-                                            borderWidth: 2,
-                                            transform: [{ scale: 1.02 }],
-                                        },
-                                        takenByOther && { opacity: 0.35 },
+                                        { borderColor: selected ? AVATAR_COLORS[a] : "rgba(0,0,0,0.08)" },
+                                        selected && { borderWidth: 2, transform: [{ scale: 1.02 }] },
+                                        (avatarDisabled || takenByOther) && { opacity: 0.35 },
                                     ]}
-                                    activeOpacity={takenByOther ? 1 : 0.9}
-                                    onPress={() => !takenByOther && setAvatarId(a)}
-                                    disabled={formDisabled || !!takenByOther}
+                                    activeOpacity={0.8}
+                                    onPress={() => {
+                                        setHasTouchedAvatar(true);
+                                        setAvatarId(a);
+                                    }}
                                 >
                                     <Text style={{ fontSize: 28 }}>{a}</Text>
                                     {takenByOther && (
-                                        <Text
-                                            style={{
-                                                fontSize: 10,
-                                                marginTop: 2,
-                                                color: "#666",
-                                            }}
-                                        >
+                                        <Text style={{ fontSize: 10, marginTop: 2, color: "#666" }}>
                                             upptagen
                                         </Text>
                                     )}
@@ -230,7 +315,7 @@ export default function ProfileScreen() {
                         value={username}
                         onChangeText={setUsername}
                         autoCapitalize="none"
-                        editable={!formDisabled}
+                        editable={!nameDisabled}
                     />
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -240,7 +325,7 @@ export default function ProfileScreen() {
                     style={[styles.pillButton]}
                     activeOpacity={0.85}
                     onPress={onSave}
-                    disabled={isPending}
+                    disabled={isPending || !uid}
                 >
                     <Text style={styles.pillButtonText}>
                         {isPending ? "Sparar..." : "Spara"}
@@ -254,17 +339,7 @@ export default function ProfileScreen() {
 const BG = "#EFEFEF";
 
 const styles = StyleSheet.create({
-    safe: { flex: 1, backgroundColor: BG },
     container: { flex: 1, backgroundColor: BG },
-    header: {
-        backgroundColor: "#FFFFFF",
-        paddingVertical: 16,
-        alignItems: "center",
-        justifyContent: "center",
-        borderBottomWidth: 0.5,
-        borderBottomColor: "rgba(0,0,0,0.06)",
-    },
-    headerTitle: { fontSize: 22, fontWeight: "600", letterSpacing: 0.3 },
     content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 120 },
     avatarWrap: { alignItems: "center", marginBottom: 16 },
     avatarCircle: {
@@ -310,7 +385,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         elevation: 3,
     },
-    actionLabel: { fontSize: 16, fontWeight: "600" },
     bottomButton: {
         position: "absolute",
         bottom: 30,
@@ -319,7 +393,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-
     pillButton: {
         paddingHorizontal: 32,
         paddingVertical: 14,
@@ -331,10 +404,16 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 3 },
         elevation: 3,
     },
-
-    pillButtonText: {
-        color: '#111',
-        fontSize: 16,
-        fontWeight: "600",
+    pillButtonText: { color: "#111", fontSize: 16, fontWeight: "600" },
+    householdRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+    },
+    householdPill: {
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: "#f0f0f0",
     },
 });
