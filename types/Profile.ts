@@ -1,9 +1,10 @@
 export type Profile = {
     id: number;
-    HouseHoldID: number;
+    HouseHoldID: string;
     Name: string;
     isOwner: boolean;
     AvatarID: string;
-    AccountId: number;
-    isRequest: boolean;
+    AccountId: string;
 }
+
+export type ProfileCreate = Omit<Profile, 'id'>;

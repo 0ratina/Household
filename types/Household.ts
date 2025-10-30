@@ -3,3 +3,5 @@ export type Household = {
     Code: number;
     Name: string;
 };
+
+export type HouseholdCreate = Omit<Household, 'id'>
