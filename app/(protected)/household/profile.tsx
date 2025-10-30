@@ -13,12 +13,10 @@ import { router } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
     doc,
-    getDoc,
-    writeBatch,
+    setDoc,
     query,
     collection,
     getDocs,
-    collectionGroup,
     where,
 } from "firebase/firestore";
 import { db, auth } from "../../../src/firebase";
@@ -30,12 +28,6 @@ export interface Profile {
     isOwner: boolean;
     AvatarID: string;
     AccountId: string;
-    isRequest: boolean;
-}
-
-export interface GlobalProfile {
-    Name: string;
-    DefaultAvatarID?: string;
 }
 
 const AVATARS = ["🦊", "🐷", "🐸", "🐥", "🐙", "🐬", "🦉", "🦄"] as const;
@@ -53,59 +45,34 @@ const AVATAR_COLORS: Record<AvatarEmoji, string> = {
 };
 
 async function getProfilesForAccount(accountId: string) {
-    const qRef = collectionGroup(db, "profiles");
-    const qy = query(qRef, where("AccountId", "==", accountId));
+    const qy = query(collection(db, "profiles"), where("AccountId", "==", accountId));
     const snap = await getDocs(qy);
-    return snap.docs.map((d) => d.data() as Profile);
-}
-
-async function getProfile(houseId: string, accountId: string) {
-    const ref = doc(db, `households/${houseId}/profiles/${accountId}`);
-    const snap = await getDoc(ref);
-    return snap.exists() ? (snap.data() as Profile) : null;
+    return snap.docs.map(
+        (d) => ({ id: d.id, ...(d.data() as Omit<Profile, "id">) }) as Profile
+    );
 }
 
 async function getUsedAvatars(householdId: string) {
-    const qRef = collection(db, `households/${householdId}/profiles`);
-    const snap = await getDocs(query(qRef));
-    const usedAvatars = new Set<string>();
+    const qy = query(collection(db, "profiles"), where("HouseholdID", "==", householdId));
+    const snap = await getDocs(qy);
+    const used = new Set<string>();
     snap.forEach((d) => {
         const a = (d.data()?.AvatarID as string) || "";
-        if (a) usedAvatars.add(a);
+        if (a) used.add(a);
     });
-    return usedAvatars;
+    return used;
 }
 
-async function saveProfileChanges(opts: {
-    uid: string;
-    newName: string;
-    selectedHouseholdId: string | null;
-    newAvatar?: AvatarEmoji;
-}) {
-    const { uid, newName, selectedHouseholdId, newAvatar } = opts;
-    const batch = writeBatch(db);
-
-    const globalRef = doc(db, "profiles", uid);
-    batch.set(
-        globalRef,
-        { Name: newName.trim() },
+async function saveProfileChanges(profileDocId: string, name: string, avatar: AvatarEmoji) {
+    const ref = doc(db, "profiles", profileDocId);
+    await setDoc(
+        ref,
+        {
+            Name: name.trim(),
+            AvatarID: avatar,
+        },
         { merge: true }
     );
-
-    if (selectedHouseholdId) {
-        const memberRef = doc(db, `households/${selectedHouseholdId}/profiles/${uid}`);
-        batch.set(
-            memberRef,
-            {
-                AccountId: uid,
-                HouseholdID: selectedHouseholdId,
-                ...(newAvatar ? { AvatarID: newAvatar } : {}),
-            },
-            { merge: true }
-        );
-    }
-
-    await batch.commit();
 }
 
 export default function ProfileScreen() {
@@ -120,20 +87,22 @@ export default function ProfileScreen() {
     const [selectedHouseholdId, setSelectedHouseholdId] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!selectedHouseholdId && myProfiles.length > 0) {
-            setSelectedHouseholdId(myProfiles[0].HouseholdID);
+        if (myProfiles.length === 0) {
+            setSelectedHouseholdId(null);
+            return;
         }
+        if (!selectedHouseholdId) {
+            setSelectedHouseholdId(myProfiles[0].HouseholdID);
+            return;
+        }
+        const stillExists = myProfiles.some(p => p.HouseholdID === selectedHouseholdId);
+        if (!stillExists) setSelectedHouseholdId(myProfiles[0].HouseholdID);
     }, [myProfiles, selectedHouseholdId]);
 
-    useEffect(() => {
-        setHasTouchedAvatar(false);
-    }, [selectedHouseholdId]);
-
-    const { data: existingProfile } = useQuery({
-        queryKey: ["profile", selectedHouseholdId, uid],
-        enabled: !!uid && !!selectedHouseholdId,
-        queryFn: () => getProfile(selectedHouseholdId!, uid!),
-    });
+    const selectedProfile = useMemo(
+        () => myProfiles.find(p => p.HouseholdID === selectedHouseholdId) ?? null,
+        [myProfiles, selectedHouseholdId]
+    );
 
     const { data: usedAvatars } = useQuery({
         queryKey: ["used-avatars", selectedHouseholdId],
@@ -141,48 +110,46 @@ export default function ProfileScreen() {
         queryFn: () => getUsedAvatars(selectedHouseholdId!),
     });
 
-    const [username, setUsername] = useState("");
-    const [avatarId, setAvatarId] = useState<AvatarEmoji>("🦊");
     const [hasTouchedAvatar, setHasTouchedAvatar] = useState(false);
+    useEffect(() => setHasTouchedAvatar(false), [selectedHouseholdId]);
 
-
+    const [nickname, setNickname] = useState("");
+    const [avatarId, setAvatarId] = useState<AvatarEmoji>("🦊");
 
     useEffect(() => {
-        const name =
-            existingProfile?.Name ??
-            "";
-        setUsername(name);
-
+        setNickname(selectedProfile?.Name ?? "");
         if (!hasTouchedAvatar) {
-            if (
-                existingProfile?.AvatarID &&
-                AVATARS.includes(existingProfile.AvatarID as AvatarEmoji)
-            ) {
-                setAvatarId(existingProfile.AvatarID as AvatarEmoji);
-            }
+            const a = selectedProfile?.AvatarID;
+            if (a && AVATARS.includes(a as AvatarEmoji)) setAvatarId(a as AvatarEmoji);
         }
-    }, [existingProfile, hasTouchedAvatar]);
+    }, [selectedProfile, hasTouchedAvatar]);
 
     const profileColor = useMemo(() => AVATAR_COLORS[avatarId], [avatarId]);
 
     const { mutate, isPending } = useMutation({
-        mutationFn: async ({ name, avatar }: { name: string; avatar: AvatarEmoji }) => {
+        mutationFn: async ({
+            profileId,
+            householdId,
+            name,
+            avatar,
+            prevAvatar,
+        }: {
+            profileId: string;
+            householdId: string | null;
+            name: string;
+            avatar: AvatarEmoji;
+            prevAvatar?: AvatarEmoji;
+        }) => {
             if (!uid) throw new Error("Ingen användare inloggad.");
+            if (!profileId) throw new Error("Kunde inte hitta din profil för valt hushåll.");
 
-            if (selectedHouseholdId) {
-                const used = await getUsedAvatars(selectedHouseholdId);
-                const allowed = !used.has(avatar) || avatar === existingProfile?.AvatarID;
-                if (!allowed) {
-                    throw new Error("Den här avataren är redan vald av någon i hushållet.");
-                }
+            if (householdId) {
+                const used = await getUsedAvatars(householdId);
+                const allowed = !used.has(avatar) || avatar === prevAvatar;
+                if (!allowed) throw new Error("Den här avataren är redan vald av någon i hushållet.");
             }
 
-            await saveProfileChanges({
-                uid,
-                newName: name,
-                selectedHouseholdId,
-                newAvatar: selectedHouseholdId ? avatar : undefined,
-            });
+            await saveProfileChanges(profileId, name, avatar);
         },
         onSuccess: () => router.back(),
         onError: (err: any) => {
@@ -191,15 +158,21 @@ export default function ProfileScreen() {
         },
     });
 
-
-
     const onSave = () => {
-        if (!username.trim()) return alert("Ange ett användarnamn!");
+        if (!uid) {
+            alert("Inte inloggad.");
+            return;
+        }
+        if (!selectedProfile) {
+            alert("Kunde inte hitta din profil för valt hushåll. Öppna hushållet och försök igen.");
+            return;
+        }
+        if (!nickname.trim()) return alert("Ange ett namn!");
 
-        const prevName = existingProfile?.Name ?? "";
-        const prevAvatar = existingProfile?.AvatarID as AvatarEmoji | undefined;
+        const prevName = selectedProfile.Name ?? "";
+        const prevAvatar = selectedProfile.AvatarID as AvatarEmoji | undefined;
 
-        const nameChanged = username.trim() !== prevName.trim();
+        const nameChanged = nickname.trim() !== prevName.trim();
         const avatarChanged = !!selectedHouseholdId && avatarId !== prevAvatar;
 
         if (!nameChanged && !avatarChanged) {
@@ -207,11 +180,33 @@ export default function ProfileScreen() {
             return;
         }
 
-        mutate({ name: username, avatar: avatarId });
+        mutate({
+            profileId: selectedProfile.id,
+            householdId: selectedHouseholdId,
+            name: nickname,
+            avatar: avatarId,
+            prevAvatar,
+        });
     };
 
-    const nameDisabled = isPending || !uid;
-    const avatarDisabled = isPending || !selectedHouseholdId;
+    const nameDisabled = isPending || !uid || !selectedProfile;
+    const avatarDisabled = isPending || !uid || !selectedProfile;
+
+    if (uid && myProfiles.length === 0) {
+        return (
+            <View style={[styles.container, { alignItems: "center", justifyContent: "center", padding: 24 }]}>
+                <Text style={{ fontSize: 16, color: "#333", textAlign: "center", marginBottom: 12 }}>
+                    Du har ingen profil ännu. Gå till ett hushåll och skapa/gå med för att kunna ändra avatar och namn.
+                </Text>
+                <TouchableOpacity
+                    onPress={() => router.push("/(protected)/joinHousehold")}
+                    style={[styles.pillButton, { paddingHorizontal: 20 }]}
+                >
+                    <Text style={styles.pillButtonText}>Gå till hushåll</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -221,42 +216,8 @@ export default function ProfileScreen() {
                 keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
             >
                 <ScrollView contentContainerStyle={styles.content}>
-                    {myProfiles.length > 1 && (
-                        <View style={[styles.inputCard, { paddingVertical: 10 }]}>
-                            <Text style={{ fontWeight: "600", marginBottom: 8 }}>Välj hushåll</Text>
-                            <View style={styles.householdRow}>
-                                {myProfiles.map((p) => {
-                                    const active = p.HouseholdID === selectedHouseholdId;
-                                    return (
-                                        <TouchableOpacity
-                                            key={p.HouseholdID}
-                                            onPress={() => setSelectedHouseholdId(p.HouseholdID)}
-                                            style={[
-                                                styles.householdPill,
-                                                active && { backgroundColor: "#111" },
-                                            ]}
-                                        >
-                                            <Text style={{ color: active ? "#fff" : "#111", fontWeight: "600" }}>
-                                                {p.HouseholdID}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-                        </View>
-                    )}
 
-                    {!selectedHouseholdId && (
-                        <Text style={{ color: "#555", marginBottom: 12, textAlign: "center" }}>
-                            Inget hushåll valt – Du kan ändra <Text style={{ fontWeight: "700" }}>namn</Text> nu.
-                            Din Avatar kan ändras när du valt ett hushåll.
-                        </Text>
-                    )}
-
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        style={styles.avatarWrap}
-                    >
+                    <TouchableOpacity activeOpacity={0.8} style={styles.avatarWrap}>
                         <View style={[styles.avatarCircle, { borderColor: profileColor, opacity: avatarDisabled ? 0.4 : 1 }]}>
                             <Text style={{ fontSize: 56 }}>{avatarId}</Text>
                         </View>
@@ -267,7 +228,7 @@ export default function ProfileScreen() {
                             const selected = a === avatarId;
                             const takenByOther =
                                 !!selectedHouseholdId &&
-                                !!(usedAvatars?.has(a) && a !== (existingProfile?.AvatarID as AvatarEmoji));
+                                !!(usedAvatars?.has(a) && a !== (selectedProfile?.AvatarID as AvatarEmoji));
 
                             return (
                                 <TouchableOpacity
@@ -280,15 +241,14 @@ export default function ProfileScreen() {
                                     ]}
                                     activeOpacity={0.8}
                                     onPress={() => {
-                                        setHasTouchedAvatar(true);
                                         setAvatarId(a);
+                                        if (takenByOther || avatarDisabled) return;
+                                        setHasTouchedAvatar(true);
                                     }}
                                 >
                                     <Text style={{ fontSize: 28 }}>{a}</Text>
                                     {takenByOther && (
-                                        <Text style={{ fontSize: 10, marginTop: 2, color: "#666" }}>
-                                            upptagen
-                                        </Text>
+                                        <Text style={{ fontSize: 10, marginTop: 2, color: "#666" }}>upptagen</Text>
                                     )}
                                 </TouchableOpacity>
                             );
@@ -297,10 +257,10 @@ export default function ProfileScreen() {
 
                     <TextInput
                         style={styles.inputCard}
-                        placeholder="Användarnamn"
+                        placeholder="Smeknamn"
                         placeholderTextColor="#7A7A7A"
-                        value={username}
-                        onChangeText={setUsername}
+                        value={nickname}
+                        onChangeText={setNickname}
                         autoCapitalize="none"
                         editable={!nameDisabled}
                     />
@@ -312,11 +272,9 @@ export default function ProfileScreen() {
                     style={[styles.pillButton]}
                     activeOpacity={0.85}
                     onPress={onSave}
-                    disabled={isPending || !uid}
+                    disabled={isPending || !uid || !selectedProfile}
                 >
-                    <Text style={styles.pillButtonText}>
-                        {isPending ? "Sparar..." : "Spara"}
-                    </Text>
+                    <Text style={styles.pillButtonText}>{isPending ? "Sparar..." : "Spara"}</Text>
                 </TouchableOpacity>
             </View>
         </View>
