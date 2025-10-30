@@ -1,15 +1,17 @@
-import { View, Text, TouchableOpacity, FlatList, Button, StyleSheet } from 'react-native'
-import { router } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
-import { db } from '../../../src/firebase'
-import { collection, getDocs } from 'firebase/firestore'
-import { useQuery } from '@tanstack/react-query'
+import {Ionicons} from '@expo/vector-icons'
+import {useQuery} from '@tanstack/react-query'
+import {router} from 'expo-router'
+import {collection, getDocs} from 'firebase/firestore'
+import {Button, FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native'
+import {db} from '../../src/firebase'
 
 interface Household {
    id: string
    Name: string
    Code: number
 }
+
+export const householdKey = ['households']
 
 async function getHouseholds(): Promise<Household[]> {
    const querySnapshot = await getDocs(collection(db, 'households'))
@@ -21,7 +23,7 @@ async function getHouseholds(): Promise<Household[]> {
 
 export default function AccountOverview() {
    const query = useQuery({
-      queryKey: ['households'],
+      queryKey: householdKey,
       queryFn: getHouseholds,
    })
 
@@ -47,18 +49,18 @@ export default function AccountOverview() {
          <View style={styles.card}>
             <View style={styles.headerContainer}>
                <Text style={styles.header}>Dina Hushåll</Text>
-               <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+               <TouchableOpacity onPress={() => router.push('/profile')}>
                   <Ionicons name='person-circle-outline' size={36} color='#007AFF' />
                </TouchableOpacity>
             </View>
 
             {query.data.length === 0 ? (
-               <Text style={{ textAlign: 'center' }}>Inga hushåll hittades.</Text>
+               <Text style={{textAlign: 'center'}}>Inga hushåll hittades.</Text>
             ) : (
                <FlatList
                   data={query.data}
                   keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
+                  renderItem={({item}) => (
                      <TouchableOpacity style={styles.householdItem} onPress={() => router.push(`/household?id=${item.id}`)}>
                         <Text style={styles.householdName}>{item.Name}</Text>
                      </TouchableOpacity>
@@ -91,7 +93,7 @@ const styles = StyleSheet.create({
       padding: 16,
       shadowColor: '#000',
       shadowOpacity: 0.1,
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: {width: 0, height: 4},
       shadowRadius: 6,
    },
    headerContainer: {
