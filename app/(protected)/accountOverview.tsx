@@ -1,9 +1,9 @@
+import {View, Text, TouchableOpacity, FlatList, Button, StyleSheet} from 'react-native'
 import {Ionicons} from '@expo/vector-icons'
-import {useQuery} from '@tanstack/react-query'
 import {router} from 'expo-router'
-import {collection, getDocs} from 'firebase/firestore'
-import {Button, FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native'
-import {db} from '../../src/firebase'
+import {useQuery} from '@tanstack/react-query'
+import {collection, getDocs, query, where, doc, getDoc} from 'firebase/firestore'
+import {auth, db} from '../../src/firebase'
 
 interface Household {
    id: string
@@ -14,11 +14,34 @@ interface Household {
 export const householdKey = ['households']
 
 async function getHouseholds(): Promise<Household[]> {
-   const querySnapshot = await getDocs(collection(db, 'households'))
-   return querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...(doc.data() as Omit<Household, 'id'>),
-   }))
+   const user = auth.currentUser
+   if (!user) {
+      console.log('Ingen användare inloggad.')
+      return []
+   }
+
+   const profilesRef = collection(db, 'profiles')
+   const q = query(profilesRef, where('AccountId', '==', user.uid))
+   const profileSnaps = await getDocs(q)
+
+   const households: Household[] = []
+
+   for (const prof of profileSnaps.docs) {
+      const profileData = prof.data() as {HouseHoldID?: string}
+      if (!profileData.HouseHoldID) continue
+
+      const householdRef = doc(db, 'households', profileData.HouseHoldID)
+      const householdSnap = await getDoc(householdRef)
+
+      if (householdSnap.exists()) {
+         households.push({
+            id: householdSnap.id,
+            ...(householdSnap.data() as Omit<Household, 'id'>),
+         })
+      }
+   }
+
+   return households
 }
 
 export default function AccountOverview() {
