@@ -1,4 +1,4 @@
-import {View, Text, TouchableOpacity, FlatList, Button, StyleSheet, Alert} from 'react-native'
+import {View, Text, TouchableOpacity, FlatList, Button, StyleSheet, Alert, ScrollView} from 'react-native'
 import {router} from 'expo-router'
 import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {collection, getDocs, query, where, doc, getDoc} from 'firebase/firestore'
@@ -85,7 +85,7 @@ export default function AccountOverview() {
 
    return (
       <View style={styles.container}>
-         <View style={styles.card}>
+         <ScrollView style={styles.card}>
             <View style={styles.headerContainer}>
                <Text style={styles.header}>Dina Hushåll</Text>
                <TouchableOpacity onPress={handleLogout}>
@@ -111,10 +111,10 @@ export default function AccountOverview() {
                <Text style={styles.buttonText}>Skapa nytt hushåll</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.buttonSecondary} onPress={() => router.push('/household')}>
+            <TouchableOpacity style={styles.buttonSecondary} onPress={() => router.push('/joinHousehold')}>
                <Text style={styles.buttonTextSecondary}>Gå med i hushåll</Text>
             </TouchableOpacity>
-         </View>
+         </ScrollView>
       </View>
    )
 }
