@@ -3,13 +3,16 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../../src/firebase";
+import { getAuth } from "firebase/auth";
+
+
 
 interface CompletedTask {
   taskId: string;
   userId: string;
   householdId: string;
   value: number;
-  doneAt: Date;
+ doneAt?: Date;
 }
 
 export default function StatisticsScreen() {
@@ -17,9 +20,10 @@ export default function StatisticsScreen() {
   const periods = ["Idag", "Förra veckan", "Oktober"];
 
   const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
+  const [, setHouseholdId] = useState<string | null>(null);
 
-  ///  Mock
+
   const defaultTasks = [
     { name: "Laga mat", color: "#F4A261" },
     { name: "Damma", color: "#E76F51" },
@@ -31,26 +35,50 @@ export default function StatisticsScreen() {
 
   useEffect(() => {
     const fetchStats = async () => {
+      setLoading(true); 
       try {
-        const q = query(
+        const auth = getAuth(); 
+        const user = auth.currentUser;
+
+        if (!user) {
+          console.warn("Ingen användare inloggad");
+          return;
+        }
+
+        const profileQ = query(
+          collection(db, "profiles"),
+          where("AccountId", "==", user.uid)
+        );
+        const profileSnap = await getDocs(profileQ);
+
+        if (profileSnap.empty) {
+          console.warn("Ingen profil hittad för användaren");
+          return;
+        }
+
+        const profileData = profileSnap.docs[0].data(); 
+        const householdId = profileData.HouseHoldID; 
+        setHouseholdId(householdId);
+
+        const statsQ = query(
           collection(db, "completedTasks"),
-          where("householdId", "==", "test-household") // ändras senare
+          where("householdId", "==", householdId)
         );
 
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => {
+        const statsSnap = await getDocs(statsQ);
+        const statsData = statsSnap.docs.map((doc) => {
           const d = doc.data();
           return {
             ...d,
-            doneAt: d.doneAt?.toDate(),
+            doneAt: d.doneAt?.toDate ? d.doneAt.toDate() : undefined, 
           } as CompletedTask;
         });
 
-        setCompletedTasks(data);
+        setCompletedTasks(statsData); 
       } catch (e) {
-        console.error("Statistikfel:", e);
+        console.error("Fel vid hämtning av statistik:", e); 
       } finally {
-        setLoading(false);
+        setLoading(false); 
       }
     };
 
@@ -69,6 +97,7 @@ export default function StatisticsScreen() {
       setPeriodIndex((prev) => (prev < periods.length - 1 ? prev + 1 : 0));
     }
   };
+
 
   return (
     <View style={styles.container}>
