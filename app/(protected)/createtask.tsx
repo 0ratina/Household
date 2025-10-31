@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet, } from "react-native";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../src/firebase";
+import { getAuth } from "firebase/auth"; 
+
 
 interface Task {
     id?: string;
@@ -12,6 +14,8 @@ interface Task {
     repeatDay: number;
     value: number;
     createdAt?: Date;
+     householdId: string; 
+
 }
 
 
@@ -39,10 +43,43 @@ export default function NewTaskScreen() {
     const [desc, setDesc] = useState("");
     const [repeatDay, setRepeatDay] = useState(1);
     const [value, setValue] = useState(1);
+    const [householdId, setHouseholdId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchHousehold = async () => {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) {
+        console.warn("Ingen användare inloggad!");
+        return;
+      }
+
+      try {
+        const q = query(collection(db, "profiles"), where("AccountId", "==", user.uid));
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+          const profileData = snapshot.docs[0].data();
+          setHouseholdId(profileData.HouseHoldID);
+          console.log("✅ Hittade hushåll:", profileData.HouseHoldID);
+        } else {
+          console.warn("Ingen profil hittad för användaren.");
+        }
+      } catch (err) {
+        console.error("Fel vid hämtning av hushåll:", err);
+      }
+    };
+
+    fetchHousehold();
+  }, []);
+
 
     const onSave = async () => {
 
         if (!title.trim()) return alert("Skriv en titel!");
+        if (!householdId) return alert("Kunde inte hitta ditt hushåll. Försök igen.");
+
 
         const newTask: Task = {
             title,
@@ -50,23 +87,28 @@ export default function NewTaskScreen() {
             repeatDay,
             value,
             createdAt: new Date(),
+             householdId, 
+
         };
 
         try {
             await addDoc(collection(db, "tasks"), newTask);
-            console.log("Ny task sparad i Firebase!");
-            alert("Task sparad! ✅");
-            router.back();
-        } catch (err) {
-            console.error("Fel vid sparande:", err);
-            alert("Kunde inte spara tasken 😢");
-        }
+           console.log("✅ Ny task sparad i Firebase med hushåll:", householdId);
+                 alert("Task sparad! ✅");
+                       router.back();
+                          
+                    
+                    } catch (err) {
+
+                                  console.error("Fel vid sparande:", err);
+                                  alert("Kunde inte spara tasken 😢");
+        } 
+        
+       
     };
 
-    const onClose = () => {
-        console.log("Stäng tryckt");
-        router.back();
-    };
+     const onClose = () => router.back();
+
 
     return (
         <View style={styles.container}>
