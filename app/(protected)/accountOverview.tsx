@@ -1,9 +1,10 @@
-import {View, Text, TouchableOpacity, FlatList, Button, StyleSheet} from 'react-native'
-import {Ionicons} from '@expo/vector-icons'
+import {View, Text, TouchableOpacity, FlatList, Button, StyleSheet, Alert} from 'react-native'
 import {router} from 'expo-router'
-import {useQuery} from '@tanstack/react-query'
+import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {collection, getDocs, query, where, doc, getDoc} from 'firebase/firestore'
 import {auth, db} from '../../src/firebase'
+import {signOut} from 'firebase/auth'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface Household {
    id: string
@@ -45,6 +46,21 @@ async function getHouseholds(): Promise<Household[]> {
 }
 
 export default function AccountOverview() {
+   const queryClient = useQueryClient()
+
+   const handleLogout = async () => {
+      try {
+         await signOut(auth)
+         await AsyncStorage.clear()
+         queryClient.clear()
+         Alert.alert('Utloggad', 'Du har loggats ut.')
+         router.replace('/login')
+      } catch (error) {
+         console.error('Fel vid utloggning:', error)
+         Alert.alert('Fel', 'Kunde inte logga ut. Försök igen.')
+      }
+   }
+
    const query = useQuery({
       queryKey: householdKey,
       queryFn: getHouseholds,
@@ -72,8 +88,9 @@ export default function AccountOverview() {
          <View style={styles.card}>
             <View style={styles.headerContainer}>
                <Text style={styles.header}>Dina Hushåll</Text>
-               <TouchableOpacity onPress={() => router.push('/profile')}>
-                  <Ionicons name='person-circle-outline' size={36} color='#007AFF' />
+               {/* 🔹 Logga ut-knapp */}
+               <TouchableOpacity onPress={handleLogout}>
+                  <Text style={styles.logoutText}>Logga ut</Text>
                </TouchableOpacity>
             </View>
 
@@ -176,5 +193,10 @@ const styles = StyleSheet.create({
       color: 'red',
       textAlign: 'center',
       marginTop: 20,
+   },
+   logoutText: {
+      color: '#E74C3C',
+      fontWeight: '500',
+      fontSize: 16,
    },
 })

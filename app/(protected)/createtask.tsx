@@ -15,6 +15,8 @@ interface Task {
     value: number;
     createdAt?: Date;
      householdId: string; 
+      isAchieved: boolean;
+
 
 }
 
@@ -88,6 +90,8 @@ export default function NewTaskScreen() {
             value,
             createdAt: new Date(),
              householdId, 
+            isAchieved: false, 
+
 
         };
 
