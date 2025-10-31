@@ -1,10 +1,10 @@
-export type Task = {
-    id: number;
-    HouseHoldID: number;
-    Interval: number;
+export interface Task {
+    id?: string;
+    title: string;
+    desc?: string;
+    repeatDay: number;
+    value: number;
+    createdAt?: Date;
+    householdId: string;
     isAchieved: boolean;
-    Title: string;
-    Description: string;
-    Difficulty: number;
-    Media: [];
 }
