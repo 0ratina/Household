@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useState } from "react";
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet, } from "react-native";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "../src/firebase";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet } from "react-native";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "../../src/firebase";
 
 interface Task {
     id?: string;
@@ -12,9 +12,10 @@ interface Task {
     repeatDay: number;
     value: number;
     createdAt?: Date;
+    updatedAt?: Date;
+    isAchieved: boolean; 
+
 }
-
-
 
 type PillProps = { label: string | number; tone?: "default" | "repeat" | "muted"; onPress?: () => void };
 
@@ -34,32 +35,63 @@ const Pill = ({ label, tone = "default", onPress }: PillProps) => {
     );
 };
 
-export default function NewTaskScreen() {
+export default function UpdateTaskScreen() {
+    const { id } = useLocalSearchParams();
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
     const [repeatDay, setRepeatDay] = useState(1);
     const [value, setValue] = useState(1);
+      const [isAchieved, setIsAchieved] = useState(false); 
 
-    const onSave = async () => {
 
-        if (!title.trim()) return alert("Skriv en titel!");
+    useEffect(() => {
+        const fetchTask = async () => {
+            if (!id) return;
 
-        const newTask: Task = {
-            title,
-            desc,
-            repeatDay,
-            value,
-            createdAt: new Date(),
+            try {
+                const docRef = doc(db, "tasks", id as string);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data() as Task;
+                    setTitle(data.title);
+                    setDesc(data.desc || "");
+                    setRepeatDay(data.repeatDay);
+                    setValue(data.value);
+                     setIsAchieved(data.isAchieved ?? false);
+
+                } else {
+                    alert("Task hittades inte!");
+                }
+            } catch (err) {
+                console.error("Fel vid hämtning:", err);
+            }
         };
 
+        fetchTask();
+    }, [id]);
+
+    const onUpdate = async () => {
+        if (!title.trim()) return alert("Skriv en titel!");
+
         try {
-            await addDoc(collection(db, "tasks"), newTask);
-            console.log("Ny task sparad i Firebase!");
-            alert("Task sparad! ✅");
+            const docRef = doc(db, "tasks", id as string);
+
+            await updateDoc(docRef, {
+                title,
+                desc,
+                repeatDay,
+                value,
+                updatedAt: new Date(),
+                isAchieved,
+            });
+
+            console.log("Task uppdaterad i Firebase!");
+            alert("Task uppdaterad! ✅");
             router.back();
         } catch (err) {
-            console.error("Fel vid sparande:", err);
-            alert("Kunde inte spara tasken 😢");
+            console.error("Fel vid uppdatering:", err);
+            alert("Kunde inte uppdatera tasken 😢");
         }
     };
 
@@ -123,9 +155,9 @@ export default function NewTaskScreen() {
                 </ScrollView>
             </KeyboardAvoidingView>
             <View style={styles.bottomBar}>
-                <TouchableOpacity style={[styles.action, styles.actionDivider]} activeOpacity={0.8} onPress={onSave}>
+                <TouchableOpacity style={[styles.action, styles.actionDivider]} activeOpacity={0.8} onPress={onUpdate}>
                     <Ionicons name="add-circle-outline" size={22} style={{ marginRight: 10 }} />
-                    <Text style={styles.actionLabel}>Spara</Text>
+                    <Text style={styles.actionLabel}>Ändra</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.action} activeOpacity={0.8} onPress={onClose}>

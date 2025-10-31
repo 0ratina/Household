@@ -1,9 +1,10 @@
-import {View, Text, TouchableOpacity, FlatList, Button, StyleSheet} from 'react-native'
+import {View, Text, TouchableOpacity, FlatList, Button, StyleSheet, Alert} from 'react-native'
 import {router} from 'expo-router'
-import {Ionicons} from '@expo/vector-icons'
-import {db} from '../../src/firebase'
-import {collection, getDocs} from 'firebase/firestore'
-import {useQuery} from '@tanstack/react-query'
+import {useQuery, useQueryClient} from '@tanstack/react-query'
+import {collection, getDocs, query, where, doc, getDoc} from 'firebase/firestore'
+import {auth, db} from '../../src/firebase'
+import {signOut} from 'firebase/auth'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface Household {
    id: string
@@ -11,17 +12,57 @@ interface Household {
    Code: number
 }
 
+export const householdKey = ['households']
+
 async function getHouseholds(): Promise<Household[]> {
-   const querySnapshot = await getDocs(collection(db, 'households'))
-   return querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...(doc.data() as Omit<Household, 'id'>),
-   }))
+   const user = auth.currentUser
+   if (!user) {
+      console.log('Ingen användare inloggad.')
+      return []
+   }
+
+   const profilesRef = collection(db, 'profiles')
+   const q = query(profilesRef, where('AccountId', '==', user.uid))
+   const profileSnaps = await getDocs(q)
+
+   const households: Household[] = []
+
+   for (const prof of profileSnaps.docs) {
+      const profileData = prof.data() as {HouseHoldID?: string}
+      if (!profileData.HouseHoldID) continue
+
+      const householdRef = doc(db, 'households', profileData.HouseHoldID)
+      const householdSnap = await getDoc(householdRef)
+
+      if (householdSnap.exists()) {
+         households.push({
+            id: householdSnap.id,
+            ...(householdSnap.data() as Omit<Household, 'id'>),
+         })
+      }
+   }
+
+   return households
 }
 
 export default function AccountOverview() {
+   const queryClient = useQueryClient()
+
+   const handleLogout = async () => {
+      try {
+         await signOut(auth)
+         await AsyncStorage.clear()
+         queryClient.clear()
+         Alert.alert('Utloggad', 'Du har loggats ut.')
+         router.replace('/login')
+      } catch (error) {
+         console.error('Fel vid utloggning:', error)
+         Alert.alert('Fel', 'Kunde inte logga ut. Försök igen.')
+      }
+   }
+
    const query = useQuery({
-      queryKey: ['households'],
+      queryKey: householdKey,
       queryFn: getHouseholds,
    })
 
@@ -47,8 +88,9 @@ export default function AccountOverview() {
          <View style={styles.card}>
             <View style={styles.headerContainer}>
                <Text style={styles.header}>Dina Hushåll</Text>
-               <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
-                  <Ionicons name='person-circle-outline' size={36} color='#007AFF' />
+               {/* 🔹 Logga ut-knapp */}
+               <TouchableOpacity onPress={handleLogout}>
+                  <Text style={styles.logoutText}>Logga ut</Text>
                </TouchableOpacity>
             </View>
 
@@ -151,5 +193,10 @@ const styles = StyleSheet.create({
       color: 'red',
       textAlign: 'center',
       marginTop: 20,
+   },
+   logoutText: {
+      color: '#E74C3C',
+      fontWeight: '500',
+      fontSize: 16,
    },
 })

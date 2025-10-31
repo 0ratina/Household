@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet } from "react-native";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../src/firebase";
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet, } from "react-native";
+import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import { db } from "../../src/firebase";
+import { getAuth } from "firebase/auth"; 
+
 
 interface Task {
     id?: string;
@@ -12,8 +14,13 @@ interface Task {
     repeatDay: number;
     value: number;
     createdAt?: Date;
-    updatedAt?: Date;
+     householdId: string; 
+      isAchieved: boolean;
+
+
 }
+
+
 
 type PillProps = { label: string | number; tone?: "default" | "repeat" | "muted"; onPress?: () => void };
 
@@ -33,67 +40,79 @@ const Pill = ({ label, tone = "default", onPress }: PillProps) => {
     );
 };
 
-export default function UpdateTaskScreen() {
-    const { id } = useLocalSearchParams();
+export default function NewTaskScreen() {
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
     const [repeatDay, setRepeatDay] = useState(1);
     const [value, setValue] = useState(1);
+    const [householdId, setHouseholdId] = useState<string | null>(null);
 
-    // DETTA HAR JAG ÄNDRAT!!!!!!! — hämta task-data från Firestore
-    useEffect(() => {
-        const fetchTask = async () => {
-            if (!id) return;
+  useEffect(() => {
+    const fetchHousehold = async () => {
+      const auth = getAuth();
+      const user = auth.currentUser;
 
-            try {
-                const docRef = doc(db, "tasks", id as string);
-                const docSnap = await getDoc(docRef);
+      if (!user) {
+        console.warn("Ingen användare inloggad!");
+        return;
+      }
 
-                if (docSnap.exists()) {
-                    const data = docSnap.data() as Task;
-                    setTitle(data.title);
-                    setDesc(data.desc || "");
-                    setRepeatDay(data.repeatDay);
-                    setValue(data.value);
-                } else {
-                    alert("Task hittades inte!");
-                }
-            } catch (err) {
-                console.error("Fel vid hämtning:", err);
-            }
+      try {
+        const q = query(collection(db, "profiles"), where("AccountId", "==", user.uid));
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+          const profileData = snapshot.docs[0].data();
+          setHouseholdId(profileData.HouseHoldID);
+          console.log("✅ Hittade hushåll:", profileData.HouseHoldID);
+        } else {
+          console.warn("Ingen profil hittad för användaren.");
+        }
+      } catch (err) {
+        console.error("Fel vid hämtning av hushåll:", err);
+      }
+    };
+
+    fetchHousehold();
+  }, []);
+
+
+    const onSave = async () => {
+
+        if (!title.trim()) return alert("Skriv en titel!");
+        if (!householdId) return alert("Kunde inte hitta ditt hushåll. Försök igen.");
+
+
+        const newTask: Task = {
+            title,
+            desc,
+            repeatDay,
+            value,
+            createdAt: new Date(),
+             householdId, 
+            isAchieved: false, 
+
+
         };
 
-        fetchTask();
-    }, [id]);
-
-    // DETTA HAR JAG ÄNDRAT!!!!!!! — uppdatera task i Firestore
-    const onUpdate = async () => {
-        if (!title.trim()) return alert("Skriv en titel!");
-
         try {
-            const docRef = doc(db, "tasks", id as string);
+            await addDoc(collection(db, "tasks"), newTask);
+           console.log("✅ Ny task sparad i Firebase med hushåll:", householdId);
+                 alert("Task sparad! ✅");
+                       router.back();
+                          
+                    
+                    } catch (err) {
 
-            await updateDoc(docRef, {
-                title,
-                desc,
-                repeatDay,
-                value,
-                updatedAt: new Date(),
-            });
-
-            console.log("Task uppdaterad i Firebase!");
-            alert("Task uppdaterad! ✅");
-            router.back();
-        } catch (err) {
-            console.error("Fel vid uppdatering:", err);
-            alert("Kunde inte uppdatera tasken 😢");
-        }
+                                  console.error("Fel vid sparande:", err);
+                                  alert("Kunde inte spara tasken 😢");
+        } 
+        
+       
     };
 
-    const onClose = () => {
-        console.log("Stäng tryckt");
-        router.back();
-    };
+     const onClose = () => router.back();
+
 
     return (
         <View style={styles.container}>
@@ -150,9 +169,9 @@ export default function UpdateTaskScreen() {
                 </ScrollView>
             </KeyboardAvoidingView>
             <View style={styles.bottomBar}>
-                <TouchableOpacity style={[styles.action, styles.actionDivider]} activeOpacity={0.8} onPress={onUpdate}>
+                <TouchableOpacity style={[styles.action, styles.actionDivider]} activeOpacity={0.8} onPress={onSave}>
                     <Ionicons name="add-circle-outline" size={22} style={{ marginRight: 10 }} />
-                    <Text style={styles.actionLabel}>Ändra</Text>
+                    <Text style={styles.actionLabel}>Spara</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.action} activeOpacity={0.8} onPress={onClose}>
