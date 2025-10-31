@@ -13,6 +13,8 @@ interface Task {
     value: number;
     createdAt?: Date;
     updatedAt?: Date;
+    isAchieved: boolean; 
+
 }
 
 type PillProps = { label: string | number; tone?: "default" | "repeat" | "muted"; onPress?: () => void };
@@ -39,8 +41,9 @@ export default function UpdateTaskScreen() {
     const [desc, setDesc] = useState("");
     const [repeatDay, setRepeatDay] = useState(1);
     const [value, setValue] = useState(1);
+      const [isAchieved, setIsAchieved] = useState(false); 
 
-    // DETTA HAR JAG ÄNDRAT!!!!!!! — hämta task-data från Firestore
+
     useEffect(() => {
         const fetchTask = async () => {
             if (!id) return;
@@ -55,6 +58,8 @@ export default function UpdateTaskScreen() {
                     setDesc(data.desc || "");
                     setRepeatDay(data.repeatDay);
                     setValue(data.value);
+                     setIsAchieved(data.isAchieved ?? false);
+
                 } else {
                     alert("Task hittades inte!");
                 }
@@ -66,7 +71,6 @@ export default function UpdateTaskScreen() {
         fetchTask();
     }, [id]);
 
-    // DETTA HAR JAG ÄNDRAT!!!!!!! — uppdatera task i Firestore
     const onUpdate = async () => {
         if (!title.trim()) return alert("Skriv en titel!");
 
@@ -79,6 +83,7 @@ export default function UpdateTaskScreen() {
                 repeatDay,
                 value,
                 updatedAt: new Date(),
+                isAchieved,
             });
 
             console.log("Task uppdaterad i Firebase!");
