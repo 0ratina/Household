@@ -1,5 +1,4 @@
 import {View, Text, TouchableOpacity, FlatList, Button, StyleSheet} from 'react-native'
-import {Ionicons} from '@expo/vector-icons'
 import {router} from 'expo-router'
 import {useQuery} from '@tanstack/react-query'
 import {collection, getDocs, query, where, doc, getDoc} from 'firebase/firestore'
@@ -72,9 +71,6 @@ export default function AccountOverview() {
          <View style={styles.card}>
             <View style={styles.headerContainer}>
                <Text style={styles.header}>Dina Hushåll</Text>
-               <TouchableOpacity onPress={() => router.push('/profile')}>
-                  <Ionicons name='person-circle-outline' size={36} color='#007AFF' />
-               </TouchableOpacity>
             </View>
 
             {query.data.length === 0 ? (
