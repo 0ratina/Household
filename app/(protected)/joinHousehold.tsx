@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { verifyHouseholdCode } from '../src/api/joinHousehold';
+import { verifyHouseholdCode } from '../../src/api/joinHousehold';
 
-export default function joinHousehold () {
+export default function joinHousehold() {
 
     const [code, setCode] = useState("");
 
@@ -24,16 +24,16 @@ export default function joinHousehold () {
 
         <View style={styles.container}>
 
-            <View style = {styles.inputView}>
-                <TextInput style = {styles.input}
-                    placeholder = "Kod"
+            <View style={styles.inputView}>
+                <TextInput style={styles.input}
+                    placeholder="Kod"
                     value={code}
                     onChangeText={setCode}
                 />
             </View>
 
-            <TouchableOpacity style= {styles.joinButton} onPress={handleJoin}> 
-                <Text style = {{fontSize: 18}}>Gå med</Text>
+            <TouchableOpacity style={styles.joinButton} onPress={handleJoin}>
+                <Text style={{ fontSize: 18 }}>Gå med</Text>
             </TouchableOpacity>
         </View>
 
@@ -62,15 +62,15 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 4 },
         elevation: 3,
-        color: '#111' ,
+        color: '#111',
     },
     joinButton: {
-        alignSelf:'center' ,
-        backgroundColor: '#fff',   
-        borderRadius: 50,              
-        paddingVertical: 20,           
-        paddingHorizontal: 30,      
-        shadowColor: '#000',           
+        alignSelf: 'center',
+        backgroundColor: '#fff',
+        borderRadius: 50,
+        paddingVertical: 20,
+        paddingHorizontal: 30,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -78,8 +78,8 @@ const styles = StyleSheet.create({
 
     },
     inputView: {
-        flex: 1, 
-        justifyContent: 'center' ,
+        flex: 1,
+        justifyContent: 'center',
     },
 
 

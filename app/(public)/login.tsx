@@ -1,28 +1,10 @@
-import {Ionicons} from '@expo/vector-icons'
-import {Link, router} from 'expo-router'
-import React, {ComponentProps, useState} from 'react'
-import {View, Text, TextInput, TouchableOpacity, Button, Alert, StyleSheet} from 'react-native'
 import {useMutation} from '@tanstack/react-query'
-import {getAuth, signInWithEmailAndPassword} from 'firebase/auth'
+import {Link, router} from 'expo-router'
+import {signInWithEmailAndPassword} from 'firebase/auth'
+import {useState} from 'react'
+import {Alert, Button, StyleSheet, Text, TextInput, View} from 'react-native'
+import {SafeAreaView} from 'react-native-safe-area-context'
 import {auth} from '../../src/firebase'
-
-type IconName = ComponentProps<typeof Ionicons>['name']
-
-type ActionButtonProps = {
-   icon: IconName
-   label: string
-   onPress: () => void
-   dividerRight?: boolean
-}
-
-function ActionButton({icon, label, onPress, dividerRight}: ActionButtonProps) {
-   return (
-      <TouchableOpacity style={[styles.action, dividerRight && styles.actionDivider]} onPress={onPress} activeOpacity={0.8}>
-         <Ionicons name={icon} size={22} style={{marginRight: 10}} />
-         <Text style={styles.actionLabel}>{label}</Text>
-      </TouchableOpacity>
-   )
-}
 
 async function signInUser({email, password}: {email: string; password: string}) {
    const userCredential = await signInWithEmailAndPassword(auth, email, password)
@@ -30,8 +12,8 @@ async function signInUser({email, password}: {email: string; password: string}) 
 }
 
 export default function Login() {
-   const [email, setUsername] = useState('')
-   const [password, setPassword] = useState('')
+   const [email, setUsername] = useState('kalle.pulli@hotmail.com')
+   const [password, setPassword] = useState('Test123')
 
    const mutation = useMutation({
       mutationFn: signInUser,
@@ -60,37 +42,36 @@ export default function Login() {
    }
 
    return (
-      <View style={styles.container}>
-         <View style={styles.card}>
-            <Text style={styles.header}>Logga in</Text>
+      <SafeAreaView edges={['top']} style={{flex: 1, backgroundColor: '#f0f0f0'}}>
+         <Text style={styles.title}>Logga in</Text>
+         <View style={styles.container}>
+            <View style={styles.card}>
+               <Text style={styles.header}>Logga in</Text>
 
-            <TextInput style={styles.input} placeholder='Användarnamn' placeholderTextColor='#7A7A7A' value={email} onChangeText={setUsername} />
+               <TextInput style={styles.input} placeholder='Användarnamn' placeholderTextColor='#7A7A7A' value={email} onChangeText={setUsername} />
 
-            <TextInput
-               style={styles.input}
-               placeholder='Lösenord'
-               placeholderTextColor='#7A7A7A'
-               secureTextEntry
-               value={password}
-               onChangeText={setPassword}
-            />
+               <TextInput
+                  style={styles.input}
+                  placeholder='Lösenord'
+                  placeholderTextColor='#7A7A7A'
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+               />
 
-            <Button title={mutation.isPending ? 'Loggar in...' : 'Logga in'} onPress={onLogin} disabled={mutation.isPending} />
+               <Button title={mutation.isPending ? 'Loggar in...' : 'Logga in'} onPress={onLogin} disabled={mutation.isPending} />
 
-            <Link style={styles.link} href='/createUser'>
-               Bli medlem
-            </Link>
+               <Link style={styles.link} href='/createUser'>
+                  Bli medlem
+               </Link>
+            </View>
          </View>
-
-         <View style={styles.bottomBar}>
-            <ActionButton icon='add-circle-outline' label='Logga in' dividerRight onPress={onLogin} />
-            <ActionButton icon='close-circle-outline' label='Stäng' onPress={onClose} />
-         </View>
-      </View>
+      </SafeAreaView>
    )
 }
 
 const styles = StyleSheet.create({
+   title: {fontSize: 26, fontWeight: '600', textAlign: 'center', marginTop: 8, marginBottom: 16},
    container: {
       flex: 1,
       backgroundColor: '#f0f0f0',

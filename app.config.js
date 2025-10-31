@@ -4,6 +4,7 @@ export default {
     expo: {
         name: "household",
         slug: "household",
+        scheme: "household",
         extra: {
             firebase: {
                 apiKey: process.env.FIREBASE_API_KEY,
