@@ -1,5 +1,18 @@
 import { router } from "expo-router";
+import { collection, getDocs } from "firebase/firestore";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import { db } from "../../../src/firebase";
+
+async function getTasksForHousehold(householdId: string) {
+  const tasksRef = collection(db, `households/${householdId}/tasks`);
+  const snap = await getDocs(tasksRef);
+
+  return snap.docs.map(d => ({
+    id: d.id,
+    householdId,
+    ...(d.data() as object)
+  }));
+}
 
 export default function TasksScreen() {
   return (
