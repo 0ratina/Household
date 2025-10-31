@@ -88,7 +88,6 @@ export default function AccountOverview() {
          <View style={styles.card}>
             <View style={styles.headerContainer}>
                <Text style={styles.header}>Dina Hushåll</Text>
-               {/* 🔹 Logga ut-knapp */}
                <TouchableOpacity onPress={handleLogout}>
                   <Text style={styles.logoutText}>Logga ut</Text>
                </TouchableOpacity>
