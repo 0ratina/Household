@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet, } from "react-native";
 import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../src/firebase";
-import { getAuth } from "firebase/auth"; 
+import { getAuth } from "firebase/auth";
 
 
 interface Task {
@@ -14,10 +14,8 @@ interface Task {
     repeatDay: number;
     value: number;
     createdAt?: Date;
-     householdId: string; 
-      isAchieved: boolean;
-
-
+    householdId: string;
+    isAchieved: boolean;
 }
 
 
@@ -47,34 +45,34 @@ export default function NewTaskScreen() {
     const [value, setValue] = useState(1);
     const [householdId, setHouseholdId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchHousehold = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
+    useEffect(() => {
+        const fetchHousehold = async () => {
+            const auth = getAuth();
+            const user = auth.currentUser;
 
-      if (!user) {
-        console.warn("Ingen användare inloggad!");
-        return;
-      }
+            if (!user) {
+                console.warn("Ingen användare inloggad!");
+                return;
+            }
 
-      try {
-        const q = query(collection(db, "profiles"), where("AccountId", "==", user.uid));
-        const snapshot = await getDocs(q);
+            try {
+                const q = query(collection(db, "profiles"), where("AccountId", "==", user.uid));
+                const snapshot = await getDocs(q);
 
-        if (!snapshot.empty) {
-          const profileData = snapshot.docs[0].data();
-          setHouseholdId(profileData.HouseHoldID);
-          console.log("✅ Hittade hushåll:", profileData.HouseHoldID);
-        } else {
-          console.warn("Ingen profil hittad för användaren.");
-        }
-      } catch (err) {
-        console.error("Fel vid hämtning av hushåll:", err);
-      }
-    };
+                if (!snapshot.empty) {
+                    const profileData = snapshot.docs[0].data();
+                    setHouseholdId(profileData.HouseHoldID);
+                    console.log("✅ Hittade hushåll:", profileData.HouseHoldID);
+                } else {
+                    console.warn("Ingen profil hittad för användaren.");
+                }
+            } catch (err) {
+                console.error("Fel vid hämtning av hushåll:", err);
+            }
+        };
 
-    fetchHousehold();
-  }, []);
+        fetchHousehold();
+    }, []);
 
 
     const onSave = async () => {
@@ -89,29 +87,29 @@ export default function NewTaskScreen() {
             repeatDay,
             value,
             createdAt: new Date(),
-             householdId, 
-            isAchieved: false, 
+            householdId,
+            isAchieved: false,
 
 
         };
 
         try {
             await addDoc(collection(db, "tasks"), newTask);
-           console.log("✅ Ny task sparad i Firebase med hushåll:", householdId);
-                 alert("Task sparad! ✅");
-                       router.back();
-                          
-                    
-                    } catch (err) {
+            console.log("✅ Ny task sparad i Firebase med hushåll:", householdId);
+            alert("Task sparad! ✅");
+            router.back();
 
-                                  console.error("Fel vid sparande:", err);
-                                  alert("Kunde inte spara tasken 😢");
-        } 
-        
-       
+
+        } catch (err) {
+
+            console.error("Fel vid sparande:", err);
+            alert("Kunde inte spara tasken 😢");
+        }
+
+
     };
 
-     const onClose = () => router.back();
+    const onClose = () => router.back();
 
 
     return (
