@@ -1,6 +1,36 @@
 # Welcome to your Expo app 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Team Knox
+
+📱 Om projektet
+
+Hushållet är en native-app byggd med React Native, Expo och TypeScript.
+Appen gör det enkelt att hålla koll på hushållets sysslor, fördela uppgifter,
+och se statistik över vem som gör vad.
+
+Funktioner inkluderar:
+
+Skapa och hantera hushåll
+
+Lägg till, redigera och markera sysslor som gjorda
+
+Profil med avatar och tema (mörkt/ljust)
+
+Statistik över poäng och aktivitet per användare
+
+Möjlighet att gå med i hushåll via kod
+
+🧩 Teknisk information
+
+Ramverk: React Native + Expo
+
+Språk: TypeScript
+
+Databas: Firebase Firestore
+
+Autentisering: Firebase Auth
+
+CI/CD: (lägg till om ni har, t.ex. GitHub Actions eller EAS)
 
 ## Get started
 
@@ -16,35 +46,27 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+   ✅ Kravuppfyllnad
+   Grundläggande krav (G)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## (x) App byggd med React Native, Expo och TypeScript
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## () Logga, splashscreen och appikon finns
 
-## Get a fresh project
+## (x) Data kommuniceras till och från Firebase
 
-When you're ready, run:
+## (x) Användare kan skapa konto, logga in och skapa hushåll
 
-```bash
-npm run reset-project
-```
+## (x) Användare kan gå med i hushåll via kod
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## (delvis) Sysslor kan läggas till, redigeras och markeras som gjorda
 
-## Learn more
+## (delvis)Statistikvy visar hushållets fördelning av sysslor och poäng
 
-To learn more about developing your project with Expo, look at the following resources:
+För väl godkänt (VG)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## () CI implementerat
 
-## Join the community
+## ()Kompletta statistikvyer (nuvarande vecka, förra veckan, förra månaden)
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## ()Normalisering av statistik vid pausade användare
