@@ -173,7 +173,7 @@ export default function ProfileScreen() {
         const prevAvatar = selectedProfile.AvatarID as AvatarEmoji | undefined;
 
         const nameChanged = nickname.trim() !== prevName.trim();
-        const avatarChanged = !!selectedHouseholdId && avatarId !== prevAvatar;
+        const avatarChanged = avatarId !== prevAvatar;
 
         if (!nameChanged && !avatarChanged) {
             alert("Inga ändringar att spara.");
@@ -242,7 +242,6 @@ export default function ProfileScreen() {
                                     activeOpacity={0.8}
                                     onPress={() => {
                                         setAvatarId(a);
-                                        if (takenByOther || avatarDisabled) return;
                                         setHasTouchedAvatar(true);
                                     }}
                                 >
