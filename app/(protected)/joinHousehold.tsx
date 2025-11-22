@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { verifyHouseholdCode } from '../../src/api/joinHousehold';
+import { verifyHouseholdCode,linkUserToHousehold } from '../../src/api/joinHousehold';
+import { getAuth } from "firebase/auth";
 
 export default function joinHousehold() {
 
     const [code, setCode] = useState("");
+    const auth = getAuth();
 
     const handleJoin = async () => {
         if (!code.trim()) {
@@ -14,7 +16,14 @@ export default function joinHousehold() {
         const household = await verifyHouseholdCode(Number(code.trim()));
 
         if (household) {
-            Alert.alert(`Du gick med i: ${household.Name}`)
+            const user = auth.currentUser;
+            if (user) {
+                await linkUserToHousehold(user.uid,household.id);
+                Alert.alert(`Du gick med i: ${household.Name}`)
+            }
+            else {
+                Alert.alert("Ingen användare är inloggad.")
+            }
         }
         else {
             Alert.alert("Koden matchar inget hushåll")
