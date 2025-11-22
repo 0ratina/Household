@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc,setDoc} from "firebase/firestore";
 import { db } from "../firebase";
 
 export async function verifyHouseholdCode(code: number) {
@@ -10,6 +10,12 @@ export async function verifyHouseholdCode(code: number) {
     return null;
     } 
   else {
-    return querySnapshot.docs[0].data();
+    const docSnap = querySnapshot.docs[0];
+    return { id: docSnap.id, ...(docSnap.data() as { Name: string; Code: number }) };
     }
+}
+
+export async function linkUserToHousehold(accountId: string, householdId: string) {
+  const profileRef = doc(db, "profiles", accountId);
+  await setDoc(profileRef, { HouseHoldID: householdId }, { merge: true });
 }
