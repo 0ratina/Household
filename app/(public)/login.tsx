@@ -1,10 +1,11 @@
-import {useMutation} from '@tanstack/react-query'
-import {Link, router} from 'expo-router'
-import {signInWithEmailAndPassword} from 'firebase/auth'
-import {useState} from 'react'
-import {Alert, Button, StyleSheet, Text, TextInput, View} from 'react-native'
-import {SafeAreaView} from 'react-native-safe-area-context'
-import {auth} from '../../src/firebase'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link, router } from 'expo-router'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { useState } from 'react'
+import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { auth } from '../../src/firebase'
+
 
 async function signInUser({email, password}: {email: string; password: string}) {
    const userCredential = await signInWithEmailAndPassword(auth, email, password)
@@ -12,6 +13,9 @@ async function signInUser({email, password}: {email: string; password: string}) 
 }
 
 export default function Login() {
+
+   const queryClient = useQueryClient();
+   
    const [email, setUsername] = useState('kalle.pulli@hotmail.com')
    const [password, setPassword] = useState('Test123')
 
@@ -21,6 +25,7 @@ export default function Login() {
          Alert.alert('Inloggad!', `Välkommen ${user.email}`)
          setUsername('')
          setPassword('')
+         queryClient.invalidateQueries({ queryKey: ['households', user.uid] });
          router.push('/accountOverview')
       },
       onError: (error) => {
