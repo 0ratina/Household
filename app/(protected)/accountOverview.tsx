@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import { signOut } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
-import { Alert, Button, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Alert, Button, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { auth, db } from '../../src/firebase'
 
 interface Household {
@@ -86,7 +86,7 @@ export default function AccountOverview() {
 
    return (
       <View style={styles.container}>
-         <ScrollView style={styles.card}>
+         <View style={styles.card}>
             <View style={styles.headerContainer}>
                <Text style={styles.header}>Dina Hushåll</Text>
                <TouchableOpacity onPress={handleLogout}>
@@ -115,7 +115,7 @@ export default function AccountOverview() {
             <TouchableOpacity style={styles.buttonSecondary} onPress={() => router.push('/joinHousehold')}>
                <Text style={styles.buttonTextSecondary}>Gå med i hushåll</Text>
             </TouchableOpacity>
-         </ScrollView>
+         </View>
       </View>
    )
 }
