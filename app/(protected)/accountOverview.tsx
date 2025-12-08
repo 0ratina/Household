@@ -1,10 +1,10 @@
-import {View, Text, TouchableOpacity, FlatList, Button, StyleSheet, Alert, ScrollView} from 'react-native'
-import {router} from 'expo-router'
-import {useQuery, useQueryClient} from '@tanstack/react-query'
-import {collection, getDocs, query, where, doc, getDoc} from 'firebase/firestore'
-import {auth, db} from '../../src/firebase'
-import {signOut} from 'firebase/auth'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { router } from 'expo-router'
+import { signOut } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
+import { Alert, Button, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { auth, db } from '../../src/firebase'
 
 interface Household {
    id: string
@@ -12,7 +12,7 @@ interface Household {
    Code: number
 }
 
-export const householdKey = ['households']
+export const householdKey = (userId: string) => ['households', userId];
 
 async function getHouseholds(): Promise<Household[]> {
    const user = auth.currentUser
@@ -21,32 +21,38 @@ async function getHouseholds(): Promise<Household[]> {
       return []
    }
 
-   const profilesRef = collection(db, 'profiles')
-   const q = query(profilesRef, where('AccountId', '==', user.uid))
-   const profileSnaps = await getDocs(q)
+   const profileRef = doc(db, "profiles", user.uid);
+   const profileSnap = await getDoc(profileRef);
 
-   const households: Household[] = []
+   if (!profileSnap.exists()) return [];
 
-   for (const prof of profileSnaps.docs) {
-      const profileData = prof.data() as {HouseHoldID?: string}
-      if (!profileData.HouseHoldID) continue
+   const profileData = profileSnap.data();
+   const householdIds: string[] = profileData?.HouseHoldID || [];
 
-      const householdRef = doc(db, 'households', profileData.HouseHoldID)
-      const householdSnap = await getDoc(householdRef)
+   const households: Household[] = [];
+
+   for (const id of householdIds) {
+      const householdRef = doc(db, "households", id);
+      const householdSnap = await getDoc(householdRef);
 
       if (householdSnap.exists()) {
          households.push({
             id: householdSnap.id,
-            ...(householdSnap.data() as Omit<Household, 'id'>),
-         })
+            ...(householdSnap.data() as Omit<Household, "id">),
+         });
       }
    }
 
-   return households
+   return households;
 }
 
 export default function AccountOverview() {
    const queryClient = useQueryClient()
+   const user = auth.currentUser;
+   const query = useQuery({
+      queryKey: householdKey(user?.uid ?? ''),
+      queryFn: getHouseholds,
+   });
 
    const handleLogout = async () => {
       try {
@@ -60,11 +66,6 @@ export default function AccountOverview() {
          Alert.alert('Fel', 'Kunde inte logga ut. Försök igen.')
       }
    }
-
-   const query = useQuery({
-      queryKey: householdKey,
-      queryFn: getHouseholds,
-   })
 
    if (query.isPending) {
       return (
