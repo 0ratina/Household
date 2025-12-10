@@ -51,6 +51,7 @@ export default function AccountOverview() {
    const user = auth.currentUser;
    const query = useQuery({
       queryKey: householdKey(user?.uid ?? ''),
+      enabled: !!user,
       queryFn: getHouseholds,
    });
 
@@ -101,7 +102,8 @@ export default function AccountOverview() {
                   data={query.data}
                   keyExtractor={(item) => item.id}
                   renderItem={({item}) => (
-                     <TouchableOpacity style={styles.householdItem} onPress={() => router.push(`/household?id=${item.id}`)}>
+                     <TouchableOpacity style={styles.householdItem} 
+                     onPress={() => router.push(`/household/overview?householdId=${item.id}`)}>
                         <Text style={styles.householdName}>{item.Name}</Text>
                      </TouchableOpacity>
                   )}
