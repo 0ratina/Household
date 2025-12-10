@@ -1,12 +1,15 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { getAuth } from "firebase/auth";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { isUserInHousehold, linkUserToHousehold, verifyHouseholdCode } from '../../src/api/joinHousehold';
+import { householdKey } from "./accountOverview";
 
 export default function joinHousehold() {
 
     const [code, setCode] = useState("");
     const auth = getAuth();
+    const queryClient = useQueryClient();
 
     const handleJoin = async () => {
         if (!code.trim()) {
@@ -33,6 +36,9 @@ export default function joinHousehold() {
         }
 
         await linkUserToHousehold(user.uid,household.id);
+        queryClient.invalidateQueries({
+            queryKey: householdKey(user.uid),
+        });
         Alert.alert(`Du gick med i: ${household.Name}`);
 
     }

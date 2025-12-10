@@ -18,6 +18,8 @@ export async function verifyHouseholdCode(code: number) {
 export async function linkUserToHousehold(accountId: string, householdId: string) {
   const profileRef = doc(db, "profiles", accountId);
   const profileSnap = await getDoc(profileRef);
+  console.log("accountId", accountId)
+  console.log("householdid", householdId)
 
   let households: string[] = [];
   if (profileSnap.exists()) {
@@ -34,6 +36,8 @@ export async function linkUserToHousehold(accountId: string, householdId: string
   if (!households.includes(householdId)) {
     households.push(householdId);
   }
+  
+  console.log("householdId sparas =", householdId)
 
   await setDoc(profileRef, { HouseHoldID: households }, { merge: true });
 }

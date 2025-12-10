@@ -1,14 +1,14 @@
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
-import {useRouter} from 'expo-router'
-import {User} from 'firebase/auth'
-import {addDoc, collection} from 'firebase/firestore'
-import {useState} from 'react'
-import {StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native'
-import {authKey} from '../../src/auth/bindAuthStateChanged'
-import {auth, db} from '../../src/firebase'
-import {HouseholdCreate} from '../../types/Household'
-import {ProfileCreate} from '../../types/Profile'
-import {householdKey} from './accountOverview'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'expo-router'
+import { User } from 'firebase/auth'
+import { addDoc, collection } from 'firebase/firestore'
+import { useState } from 'react'
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { authKey } from '../../src/auth/bindAuthStateChanged'
+import { auth, db } from '../../src/firebase'
+import { HouseholdCreate } from '../../types/Household'
+import { ProfileCreate } from '../../types/Profile'
+import { householdKey } from './accountOverview'
 
 async function createHousehold({household, user}: {household: HouseholdCreate; user: User}) {
    const householdRef = await addDoc(collection(db, 'households'), household)
@@ -31,7 +31,7 @@ export default function Createhousehold() {
    const createMutation = useMutation({
       mutationFn: createHousehold,
       onSuccess: () => {
-         queryClient.invalidateQueries({queryKey: householdKey})
+         queryClient.invalidateQueries({queryKey: householdKey(user?.uid ?? '')})
          router.replace('/household/overview')
       },
    })
