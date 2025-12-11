@@ -1,10 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, TextInput, StyleSheet, } from "react-native";
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import { router, useLocalSearchParams } from "expo-router";
+import { addDoc, collection } from "firebase/firestore";
+import { useState } from "react";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, } from "react-native";
 import { db } from "../../src/firebase";
-import { getAuth } from "firebase/auth";
 
 
 interface Task {
@@ -14,11 +13,9 @@ interface Task {
     repeatDay: number;
     value: number;
     createdAt?: Date;
-    householdId: string;
+    HouseHoldID: string;
     isAchieved: boolean;
 }
-
-
 
 type PillProps = { label: string | number; tone?: "default" | "repeat" | "muted"; onPress?: () => void };
 
@@ -43,43 +40,21 @@ export default function NewTaskScreen() {
     const [desc, setDesc] = useState("");
     const [repeatDay, setRepeatDay] = useState(1);
     const [value, setValue] = useState(1);
-    const [householdId, setHouseholdId] = useState<string | null>(null);
+    const {householdId} = useLocalSearchParams();
+    const householdIdStr = Array.isArray(householdId) ? householdId[0] : householdId;
+    const activeHouseholdId = typeof householdId === "string"
+    ? householdId
+    : Array.isArray(householdId)
+    ? householdId[0]
+    : null;
 
-    useEffect(() => {
-        const fetchHousehold = async () => {
-            const auth = getAuth();
-            const user = auth.currentUser;
-
-            if (!user) {
-                console.warn("Ingen användare inloggad!");
-                return;
-            }
-
-            try {
-                const q = query(collection(db, "profiles"), where("AccountId", "==", user.uid));
-                const snapshot = await getDocs(q);
-
-                if (!snapshot.empty) {
-                    const profileData = snapshot.docs[0].data();
-                    setHouseholdId(profileData.HouseHoldID);
-                    console.log("✅ Hittade hushåll:", profileData.HouseHoldID);
-                } else {
-                    console.warn("Ingen profil hittad för användaren.");
-                }
-            } catch (err) {
-                console.error("Fel vid hämtning av hushåll:", err);
-            }
-        };
-
-        fetchHousehold();
-    }, []);
+    console.log(" householdIdState:", activeHouseholdId);
 
 
     const onSave = async () => {
 
         if (!title.trim()) return alert("Skriv en titel!");
-        if (!householdId) return alert("Kunde inte hitta ditt hushåll. Försök igen.");
-
+        if (!activeHouseholdId) return alert("Kunde inte hitta ditt hushåll. Försök igen.");
 
         const newTask: Task = {
             title,
@@ -87,16 +62,18 @@ export default function NewTaskScreen() {
             repeatDay,
             value,
             createdAt: new Date(),
-            householdId,
+            HouseHoldID: activeHouseholdId!,
             isAchieved: false,
-
-
         };
 
         try {
+            console.log("activeHouseHoldId", activeHouseholdId);
+            console.log("taskdata", { title, desc, repeatDay, value });
+
             await addDoc(collection(db, "tasks"), newTask);
-            console.log("✅ Ny task sparad i Firebase med hushåll:", householdId);
-            alert("Task sparad! ✅");
+            
+            console.log("task sparad med hushållidet", activeHouseholdId);
+            alert("Task sparad!");
             router.back();
 
 

@@ -1,12 +1,15 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { getAuth } from "firebase/auth";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { verifyHouseholdCode,linkUserToHousehold } from '../../src/api/joinHousehold';
-import { getAuth } from "firebase/auth";
+import { isUserInHousehold, linkUserToHousehold, verifyHouseholdCode } from '../../src/api/joinHousehold';
+import { householdKey } from "./accountOverview";
 
 export default function joinHousehold() {
 
     const [code, setCode] = useState("");
     const auth = getAuth();
+    const queryClient = useQueryClient();
 
     const handleJoin = async () => {
         if (!code.trim()) {
@@ -14,20 +17,30 @@ export default function joinHousehold() {
             return;
         }
         const household = await verifyHouseholdCode(Number(code.trim()));
+        const user = auth.currentUser;
 
-        if (household) {
-            const user = auth.currentUser;
-            if (user) {
-                await linkUserToHousehold(user.uid,household.id);
-                Alert.alert(`Du gick med i: ${household.Name}`)
-            }
-            else {
-                Alert.alert("Ingen användare är inloggad.")
-            }
+        if (!household) {
+            Alert.alert("Koden matchar inget hushhåll");
+            return;
         }
-        else {
-            Alert.alert("Koden matchar inget hushåll")
+
+        if (!user) {
+            Alert.alert("Ingen användare är inloggad.");
+            return;
         }
+
+        const alreadyJoined = await isUserInHousehold(user.uid,household.id)
+        if (alreadyJoined) {
+            Alert.alert(`Du är redan med i: ${household.Name}`);
+            return;
+        }
+
+        await linkUserToHousehold(user.uid,household.id);
+        queryClient.invalidateQueries({
+            queryKey: householdKey(user.uid),
+        });
+        Alert.alert(`Du gick med i: ${household.Name}`);
+
     }
     return (
 

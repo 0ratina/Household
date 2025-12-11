@@ -1,9 +1,9 @@
-import { router, useFocusEffect } from "expo-router";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { TouchableOpacity, Text, StyleSheet, View, ScrollView } from "react-native";
-import { auth, db } from "../../../src/firebase";
-import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { act, useCallback } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { auth, db } from "../../../src/firebase";
 import { Task } from "../../../types/Task";
 
 
@@ -11,55 +11,48 @@ async function getTasksForHousehold(householdId: string): Promise<Task[]> {
   if (!householdId) return [];
   const q = query(
     collection(db, "tasks"),
-    where("householdId", "==", householdId)
+    where("HouseHoldID", "==", householdId)
   );
   const snap = await getDocs(q);
+  console.log("hämtar tasks för householdId", householdId,snap.docs.length);
 
   return snap.docs.map(
-    (d) => ({ id: d.id, ...(d.data() as Omit<Task, "id">) }) as Task
+    (d) => ({ id: d.id, ...(d.data() as Omit<Task, "id">) }) as Task,
   );
-}
-
-async function getActiveHousehold() {
-  const uid = auth.currentUser?.uid;
-  if (!uid) return null;
-
-  const q = query(collection(db, "profiles"), where("AccountId", "==", uid));
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-
-  const profile = snap.docs[0].data() as { householdId?: string; HouseHoldID?: string };
-  return profile.householdId ?? profile.HouseHoldID ?? null;
 }
 
 export default function OverviewScreen() {
   const queryClient = useQueryClient();
+  const {householdId} = useLocalSearchParams();
 
-  const { data: householdId, isLoading: loadingHousehold } = useQuery({
-    queryKey: ["activeHousehold"],
-    queryFn: getActiveHousehold,
-  });
+  const activeHouseholdId = typeof householdId === "string"
+  ? householdId
+  : Array.isArray(householdId)
+  ? householdId[0]
+  : null;
+
+  console.log("Overview.tsx activeHouseholdId",activeHouseholdId)
 
   const {
     data: tasks = [],
     isLoading: loadingTasks,
     refetch,
   } = useQuery({
-    queryKey: ["tasks", householdId],
-    enabled: !!householdId,
-    queryFn: () => getTasksForHousehold(householdId!),
+    queryKey: ["tasks", activeHouseholdId],
+    enabled: !!activeHouseholdId,
+    queryFn: () => getTasksForHousehold(activeHouseholdId!),
   });
 
   useFocusEffect(
     useCallback(() => {
-      if (householdId) {
-        queryClient.invalidateQueries({ queryKey: ["tasks", householdId] });
+      if (activeHouseholdId) {
+        queryClient.invalidateQueries({ queryKey: ["tasks", activeHouseholdId] });
         refetch();
       }
-    }, [householdId, queryClient, refetch])
+    }, [activeHouseholdId, queryClient, refetch])
   );
 
-  const isLoading = loadingHousehold || loadingTasks;
+  const isLoading = loadingTasks;
 
   return (
     <View style={styles.container}>
@@ -67,7 +60,7 @@ export default function OverviewScreen() {
         <ScrollView contentContainerStyle={{ padding: 16 }}>
           {isLoading && <Text>Laddar uppgifter...</Text>}
 
-          {!isLoading && (!householdId || tasks.length === 0) && (
+          {!isLoading && (!activeHouseholdId || tasks.length === 0) && (
             <Text style={{ textAlign: "center", color: "#555" }}>
               Inga uppgifter hittades.
             </Text>
@@ -82,7 +75,10 @@ export default function OverviewScreen() {
 
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => router.push("/createtask")}
+          onPress={() => {
+            console.log("öppnar CreateTask med householdId", householdId);
+            router.push(`/createtask?householdId=${activeHouseholdId}`)
+          }}
         >
           <Text style={styles.addButtonText}>+ Lägg till</Text>
         </TouchableOpacity>
