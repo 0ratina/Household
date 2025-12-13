@@ -1,33 +1,62 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getTask, toggleTaskAchieved } from "../../../src/api/taskOverview";
 
 export default function taskOverview () {
-    return (
+    const {taskId} = useLocalSearchParams();
+    const queryClient = useQueryClient();
 
+    const {data: task,} = useQuery({
+        queryKey: ["task",taskId],
+        enabled: !!taskId,
+        queryFn: () => getTask(taskId as string),
+    })
+
+    const toggle = useMutation({
+        mutationFn: () => toggleTaskAchieved(taskId as string, task?.isAchieved),
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ["task",taskId]});
+            queryClient.invalidateQueries({queryKey: ["tasks"]});
+        }
+    });
+    return (
+        <>  
+    
+        <Stack.Screen options = {{title: "Syssla"}} />
+        
             <View style={styles.container}>
                 <View style = {styles.contentWrapper}>
 
                     <ScrollView style = {styles.content}>
 
                         <View style = {styles.card}>
-                            <Text style = {styles.cardText}> Göra tvätten</Text>
+                            <Text style = {styles.cardText}>{task?.title}</Text>
                         </View>
 
                         <View style = {styles.infoCard}>
-                            <Text style = {styles.infoText}> 
-                                - Glöm inte seprarera vita{"\n"}
-                                - Tvätta på 30 grader
-                            </Text>
+                            <Text style = {styles.infoText}>{task?.desc || "Ingen Beskrivning"} </Text>
+                        </View>
+
+                        <View style = {styles.infoCard}>
+                            <Text style = {[styles.smallerInfoText, {color: "#2E8B57"}]}>🔁 Var {task?.repeatDay} dag </Text>
+                        </View>
+
+                        <View style = {styles.infoCard}> 
+                            <Text style = {[styles.smallerInfoText, {color: "#7B61FF"}]}>⚡Värde {task?.value}</Text>
                         </View>
                     </ScrollView>
 
-
-                    <TouchableOpacity style= {styles.button}> 
-                        <Text style = {{fontSize: 18}}>Markera som gjord</Text>
-                    </TouchableOpacity>
+                    {!task?.isAchieved && (
+                        <TouchableOpacity style= {styles.button} onPress={() => toggle.mutate()}> 
+                            <Text style = {{fontSize: 18}}>Markera som gjord</Text>
+                        </TouchableOpacity>
+                    )}
 
                 </View>
 
             </View>
+        </>
 
     )
 }
@@ -80,6 +109,10 @@ const styles = StyleSheet.create({
     infoText: {
         fontSize: 17,
         fontWeight: "700",
+    },
+    smallerInfoText: {
+        fontSize: 15,
+        fontWeight: "600",
     },
     content: {
         flexGrow: 1

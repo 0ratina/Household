@@ -1,9 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { act, useCallback } from "react";
+import { useCallback } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { auth, db } from "../../../src/firebase";
+import { db } from "../../../src/firebase";
 import { Task } from "../../../types/Task";
 
 
@@ -66,10 +66,14 @@ export default function OverviewScreen() {
             </Text>
           )}
 
-          {tasks.map((task: Task) => (
-            <View key={task.id} style={styles.taskCard}>
+          {tasks
+          .filter(t => !t.isAchieved)
+          .map((task: Task) => (
+            <TouchableOpacity key={task.id} style={styles.taskCard}
+            onPress={() => router.push(`/task/${task.id}`)}
+            >
               <Text style={styles.taskTitle}>{task.title}</Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </ScrollView>
 
