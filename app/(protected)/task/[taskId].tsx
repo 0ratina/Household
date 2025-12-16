@@ -12,8 +12,7 @@ export default function taskOverview () {
 
     const {data: myProfile} = useQuery({
         queryKey: ["myProfile",activeHousehold],
-        enabled: !!activeHousehold,
-        queryFn: () => getMyProfile(activeHousehold!),
+        queryFn: () => getMyProfile(),
     })
 
     const {data: task,} = useQuery({

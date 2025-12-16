@@ -24,7 +24,7 @@ export default function DayOverview() {
 
         <View style={styles.infoCard}>
           <Text style={[styles.smallerInfoText, { color: "#C54B53" }]}>
-            🔴 Försenade
+            🔴 Försenade -------------------------------
           </Text>
         </View>
 
@@ -42,7 +42,7 @@ export default function DayOverview() {
 
         <View style={styles.infoCard}>
           <Text style={[styles.smallerInfoText, { color: "#E6A700" }]}>
-            🟡 Ska göras idag
+            🟡 Ska göras idag --------------------------
           </Text>
         </View>
         
@@ -57,7 +57,7 @@ export default function DayOverview() {
 
         <View style={styles.infoCard}>
           <Text style={[styles.smallerInfoText, { color: "#2E8B57" }]}>
-            🟢 Klara
+            🟢 Klara ------------------------------------
           </Text>
         </View>
 
