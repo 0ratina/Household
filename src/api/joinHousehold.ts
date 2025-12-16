@@ -21,6 +21,17 @@ export async function linkUserToHousehold(accountId: string, householdId: string
   console.log("accountId", accountId)
   console.log("householdid", householdId)
 
+  if (!profileSnap.exists()) {
+    await setDoc(profileRef, {
+      AccountId: accountId,
+      HouseHoldID: [householdId],
+      Name: "",
+      AvatarID: "🐸",
+      isOwner: false,
+    });
+    return;
+  }
+
   let households: string[] = [];
   if (profileSnap.exists()) {
     const profileData = profileSnap.data();

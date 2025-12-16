@@ -16,14 +16,11 @@ async function createHousehold({household, user}: {household: HouseholdCreate; u
    
    await linkUserToHousehold(user.uid,householdRef.id)
 
-   const profileRef = doc(db,'profiles', user.uid)
-   await setDoc(profileRef,{
-      AccountId: user.uid,
-      Name: 'Ägare',
-      AvatarID: '🦉',
-      isOwner: true,
-   },
-   {merge:true})
+   await setDoc(
+      doc(db,'profiles',user.uid),
+      {isOwner: true},
+      {merge:true}
+   )
 
    return householdRef.id
 }
