@@ -7,4 +7,8 @@ export interface Task {
     createdAt?: Date;
     householdId: string;
     isAchieved: boolean;
+    lastCompletedAt?: Date | null;
+    daysLate?: number;
+    completedBy?: string;
+
 }

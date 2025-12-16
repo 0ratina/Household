@@ -1,11 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getMyProfile } from "../../../src/api/getProfile";
 import { getTask, toggleTaskAchieved } from "../../../src/api/taskOverview";
+import { useActiveHousehold } from "../../../src/service/activeHousehold";
 
 export default function taskOverview () {
     const {taskId} = useLocalSearchParams();
     const queryClient = useQueryClient();
+    const {data: activeHousehold} = useActiveHousehold();
+
+    const {data: myProfile} = useQuery({
+        queryKey: ["myProfile",activeHousehold],
+        enabled: !!activeHousehold,
+        queryFn: () => getMyProfile(activeHousehold!),
+    })
 
     const {data: task,} = useQuery({
         queryKey: ["task",taskId],
@@ -14,7 +23,7 @@ export default function taskOverview () {
     })
 
     const toggle = useMutation({
-        mutationFn: () => toggleTaskAchieved(taskId as string, task?.isAchieved),
+        mutationFn: () => toggleTaskAchieved(taskId as string,myProfile?.name),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: ["task",taskId]});
             queryClient.invalidateQueries({queryKey: ["tasks"]});

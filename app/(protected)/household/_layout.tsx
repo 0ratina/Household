@@ -1,5 +1,5 @@
-import {Ionicons} from '@expo/vector-icons'
-import {Tabs} from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { Tabs } from 'expo-router'
 
 export default function HouseholdTabsLayout() {
    return (
@@ -10,6 +10,14 @@ export default function HouseholdTabsLayout() {
                title: 'Sysslor',
                headerTitleStyle: {fontSize: 24, fontWeight: '600'},
                tabBarIcon: ({color, size}) => <Ionicons name='home-outline' color={color} size={size} />,
+            }}
+         />
+         <Tabs.Screen
+            name='dayOverview'
+            options={{
+               title: 'DagsVy',
+               headerTitleStyle: {fontSize: 24, fontWeight: '600'},
+               tabBarIcon: ({color, size}) => <Ionicons name='today-outline' color={color} size={size} />,
             }}
          />
          <Tabs.Screen
@@ -27,6 +35,7 @@ export default function HouseholdTabsLayout() {
                headerTitleStyle: {fontSize: 24, fontWeight: '600'},
                tabBarIcon: ({color, size}) => <Ionicons name='person-outline' color={color} size={size} />,
             }}
+            
          />
       </Tabs>
    )
