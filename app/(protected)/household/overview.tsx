@@ -1,25 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { collection, getDocs, query, where } from "firebase/firestore";
 import { useCallback } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { db } from "../../../src/firebase";
+import { getTasksForHousehold } from "../../../src/api/taskOverview";
 import { Task } from "../../../types/Task";
-
-
-async function getTasksForHousehold(householdId: string): Promise<Task[]> {
-  if (!householdId) return [];
-  const q = query(
-    collection(db, "tasks"),
-    where("HouseHoldID", "==", householdId)
-  );
-  const snap = await getDocs(q);
-  console.log("hämtar tasks för householdId", householdId,snap.docs.length);
-
-  return snap.docs.map(
-    (d) => ({ id: d.id, ...(d.data() as Omit<Task, "id">) }) as Task,
-  );
-}
+import { setActiveHousehold } from "../../../src/service/activeHousehold";
 
 export default function OverviewScreen() {
   const queryClient = useQueryClient();
@@ -30,6 +15,18 @@ export default function OverviewScreen() {
   : Array.isArray(householdId)
   ? householdId[0]
   : null;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!activeHouseholdId) return;
+      
+      setActiveHousehold(queryClient,activeHouseholdId);
+
+      queryClient.invalidateQueries({
+        queryKey:["tasks", activeHouseholdId],
+      });
+    },[activeHouseholdId,queryClient])
+  );
 
   console.log("Overview.tsx activeHouseholdId",activeHouseholdId)
 
@@ -42,15 +39,6 @@ export default function OverviewScreen() {
     enabled: !!activeHouseholdId,
     queryFn: () => getTasksForHousehold(activeHouseholdId!),
   });
-
-  useFocusEffect(
-    useCallback(() => {
-      if (activeHouseholdId) {
-        queryClient.invalidateQueries({ queryKey: ["tasks", activeHouseholdId] });
-        refetch();
-      }
-    }, [activeHouseholdId, queryClient, refetch])
-  );
 
   const isLoading = loadingTasks;
 
