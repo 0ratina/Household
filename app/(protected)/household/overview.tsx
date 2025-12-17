@@ -2,9 +2,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { getHousehold } from "../../../src/api/household";
 import { getTasksForHousehold } from "../../../src/api/taskOverview";
-import { Task } from "../../../types/Task";
 import { setActiveHousehold } from "../../../src/service/activeHousehold";
+import { Task } from "../../../types/Task";
 
 export default function OverviewScreen() {
   const queryClient = useQueryClient();
@@ -39,12 +40,24 @@ export default function OverviewScreen() {
     enabled: !!activeHouseholdId,
     queryFn: () => getTasksForHousehold(activeHouseholdId!),
   });
-
+  
+  const { data: household } = useQuery({
+    queryKey: ["household", activeHouseholdId],
+    enabled: !!activeHouseholdId,
+    queryFn: () => getHousehold(activeHouseholdId!),
+  });
+  
   const isLoading = loadingTasks;
-
+  
   return (
     <View style={styles.container}>
       <View style={{ flex: 1 }}>
+          {household?.Code && (
+        <View style={styles.codeBanner}>
+          <Text style={styles.codeLabel}>Hushållskod</Text>
+          <Text style={styles.codeValue}>{household.Code}</Text>
+        </View>
+        )}
         <ScrollView contentContainerStyle={{ padding: 16 }}>
           {isLoading && <Text>Laddar uppgifter...</Text>}
 
@@ -63,6 +76,8 @@ export default function OverviewScreen() {
               <Text style={styles.taskTitle}>{task.title}</Text>
             </TouchableOpacity>
           ))}
+
+
         </ScrollView>
 
         <TouchableOpacity
@@ -120,5 +135,27 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+
+  codeBanner: {
+  backgroundColor: "#FFFFFF",
+  paddingVertical: 8,
+  paddingHorizontal: 16,
+  borderBottomWidth: 1,
+  borderColor: "#E5E5E5",
+  alignItems: "center",
+  },
+
+  codeLabel: {
+    fontSize: 11,
+    color: "#777",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+
+  codeValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 2,
   },
 });

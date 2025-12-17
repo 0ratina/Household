@@ -1,5 +1,5 @@
 export type Household = {
-    id: number;
+    id: string;
     Code: number;
     Name: string;
 };
