@@ -1,25 +1,25 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
 import {
-    View,
+    collection,
+    doc,
+    getDocs,
+    query,
+    setDoc,
+    where,
+} from "firebase/firestore";
+import { useEffect, useMemo, useState } from "react";
+import {
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    StyleSheet,
-    ScrollView,
-    KeyboardAvoidingView,
-    Platform,
+    View,
 } from "react-native";
-import { router } from "expo-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-    doc,
-    setDoc,
-    query,
-    collection,
-    getDocs,
-    where,
-} from "firebase/firestore";
-import { db, auth } from "../../../src/firebase";
+import { auth, db } from "../../../src/firebase";
 
 export interface Profile {
     id: string;
@@ -77,6 +77,7 @@ async function saveProfileChanges(profileDocId: string, name: string, avatar: Av
 
 export default function ProfileScreen() {
     const uid = auth.currentUser?.uid ?? null;
+    const queryClient = useQueryClient();
 
     const { data: myProfiles = [] } = useQuery({
         queryKey: ["profiles-by-account", uid],
@@ -151,7 +152,12 @@ export default function ProfileScreen() {
 
             await saveProfileChanges(profileId, name, avatar);
         },
-        onSuccess: () => router.back(),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({
+                queryKey: ["profiles-by-account", uid],
+            });
+            router.back();
+        },
         onError: (err: any) => {
             console.error(err);
             alert(err?.message ?? "Kunde inte uppdatera profilen");
