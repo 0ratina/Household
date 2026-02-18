@@ -22,3 +22,11 @@ export async function getMyProfile() {
     isOwner: data?.isOwner,
   };
 }
+export async function getProfilesForHousehold(householdId: string) {
+  const q = query(
+    collection(db, "profiles"),
+    where("HouseHoldID", "array-contains", householdId)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
