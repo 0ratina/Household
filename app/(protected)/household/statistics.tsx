@@ -1,18 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../../src/firebase";
 import { getAuth } from "firebase/auth";
-
-
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { db } from "../../../src/firebase";
 
 interface CompletedTask {
   taskId: string;
   userId: string;
   householdId: string;
   value: number;
- doneAt?: Date;
+  doneAt?: Date;
 }
 
 export default function StatisticsScreen() {
@@ -20,9 +18,8 @@ export default function StatisticsScreen() {
   const periods = ["Idag", "Förra veckan", "Oktober"];
 
   const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
   const [, setHouseholdId] = useState<string | null>(null);
-
 
   const defaultTasks = [
     { name: "Laga mat", color: "#F4A261" },
@@ -35,9 +32,9 @@ export default function StatisticsScreen() {
 
   useEffect(() => {
     const fetchStats = async () => {
-      setLoading(true); 
+      setLoading(true);
       try {
-        const auth = getAuth(); 
+        const auth = getAuth();
         const user = auth.currentUser;
 
         if (!user) {
@@ -47,7 +44,7 @@ export default function StatisticsScreen() {
 
         const profileQ = query(
           collection(db, "profiles"),
-          where("AccountId", "==", user.uid)
+          where("AccountId", "==", user.uid),
         );
         const profileSnap = await getDocs(profileQ);
 
@@ -56,13 +53,13 @@ export default function StatisticsScreen() {
           return;
         }
 
-        const profileData = profileSnap.docs[0].data(); 
-        const householdId = profileData.HouseHoldID; 
+        const profileData = profileSnap.docs[0].data();
+        const householdId = profileData.HouseHoldID;
         setHouseholdId(householdId);
 
         const statsQ = query(
           collection(db, "completedTasks"),
-          where("householdId", "==", householdId)
+          where("householdId", "==", householdId),
         );
 
         const statsSnap = await getDocs(statsQ);
@@ -70,25 +67,22 @@ export default function StatisticsScreen() {
           const d = doc.data();
           return {
             ...d,
-            doneAt: d.doneAt?.toDate ? d.doneAt.toDate() : undefined, 
+            doneAt: d.doneAt?.toDate ? d.doneAt.toDate() : undefined,
           } as CompletedTask;
         });
 
-        setCompletedTasks(statsData); 
+        setCompletedTasks(statsData);
       } catch (e) {
-        console.error("Fel vid hämtning av statistik:", e); 
+        console.error("Fel vid hämtning av statistik:", e);
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
     };
 
     fetchStats();
   }, []);
 
-  const totalValue = completedTasks.reduce(
-    (sum, t) => sum + (t.value || 0),
-    0
-  );
+  const totalValue = completedTasks.reduce((sum, t) => sum + (t.value || 0), 0);
 
   const changePeriod = (direction: "prev" | "next") => {
     if (direction === "prev") {
@@ -98,10 +92,8 @@ export default function StatisticsScreen() {
     }
   };
 
-
   return (
     <View style={styles.container}>
-
       <Text style={styles.title}>Hushållet</Text>
 
       <View style={styles.navRow}>
@@ -117,9 +109,7 @@ export default function StatisticsScreen() {
       </View>
 
       <View style={styles.bigCircle}>
-        <Text style={styles.bigText}>
-          {loading ? "..." : `${totalValue}`}
-        </Text>
+        <Text style={styles.bigText}>{loading ? "..." : `${totalValue}`}</Text>
         <Text style={{ fontSize: 14 }}>poäng totalt</Text>
       </View>
 
@@ -129,12 +119,14 @@ export default function StatisticsScreen() {
 
       <View style={styles.smallCirclesContainer}>
         {defaultTasks.map((task, index) => (
-          <View key={index} style={[styles.smallCircle, { backgroundColor: task.color }]}>
+          <View
+            key={index}
+            style={[styles.smallCircle, { backgroundColor: task.color }]}
+          >
             <Text style={styles.smallText}>{task.name}</Text>
           </View>
         ))}
       </View>
-
     </View>
   );
 }

@@ -1,5 +1,5 @@
 export type Account = {
-    id: number;
-    Username: string;
-    Password: string;
+  id: number;
+  Username: string;
+  Password: string;
 };

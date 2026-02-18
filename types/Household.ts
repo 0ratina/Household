@@ -1,7 +1,7 @@
 export type Household = {
-    id: string;
-    Code: number;
-    Name: string;
+  id: string;
+  Code: number;
+  Name: string;
 };
 
-export type HouseholdCreate = Omit<Household, 'id'>
+export type HouseholdCreate = Omit<Household, "id">;
