@@ -257,12 +257,12 @@ const styles = StyleSheet.create({
   taskTitle: {
     fontWeight: "600",
     fontSize: 16,
-    marginBottom: 4
+    marginBottom: 4,
   },
 
   taskSub: {
     color: "#666",
-    fontSize: 13
+    fontSize: 13,
   },
 
   addButton: {

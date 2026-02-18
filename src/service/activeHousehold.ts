@@ -12,7 +12,7 @@ export function useActiveHousehold() {
 
 export function setActiveHousehold(
   queryClient: ReturnType<typeof useQueryClient>,
-  householdId: string
+  householdId: string,
 ) {
   queryClient.setQueryData(ACTIVE_HOUSEHOLD_KEY, householdId);
 }
