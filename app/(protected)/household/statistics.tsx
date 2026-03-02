@@ -20,6 +20,7 @@ export default function StatisticsScreen() {
   const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setHouseholdId] = useState<string | null>(null);
+  const [selectedDate] = useState(new Date());
 
   const defaultTasks = [
     { name: "Laga mat", color: "#F4A261" },
@@ -127,6 +128,10 @@ export default function StatisticsScreen() {
           </View>
         ))}
       </View>
+
+      <View style={styles.taskCountContainer}>
+        <Text>Antal uppgifter: {loading ? "..." : tasks.length}</Text>
+      </View>
     </View>
   );
 }
@@ -198,5 +203,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     fontSize: 14,
+  },
+  taskCountContainer: {
+    padding: 10,
+    backgroundColor: "#F7C59F",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
   },
 });
