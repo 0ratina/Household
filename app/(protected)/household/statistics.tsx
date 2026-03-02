@@ -6,6 +6,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { db } from "../../../src/firebase";
 
 interface CompletedTask {
+  name: string;
   taskId: string;
   userId: string;
   householdId: string;
@@ -15,21 +16,12 @@ interface CompletedTask {
 
 export default function StatisticsScreen() {
   const [periodIndex, setPeriodIndex] = useState(0);
-  const periods = ["Idag", "Förra veckan", "Oktober"];
+  const periods = ["Idag", "Förra veckan", "Förra månaden",];
 
   const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setHouseholdId] = useState<string | null>(null);
   const [selectedDate] = useState(new Date());
-
-  const defaultTasks = [
-    { name: "Laga mat", color: "#F4A261" },
-    { name: "Damma", color: "#E76F51" },
-    { name: "Diska", color: "#F6BD60" },
-    { name: "Ta hand om My", color: "#E9C46A" },
-    { name: "Torka golvet", color: "#F7A072" },
-    { name: "Vattna blommor", color: "#F28482" },
-  ];
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -60,7 +52,7 @@ export default function StatisticsScreen() {
 
         const statsQ = query(
           collection(db, "completedTasks"),
-          where("householdId", "==", householdId),
+          where("householdId", "==", householdId)
         );
 
         const statsSnap = await getDocs(statsQ);
@@ -83,8 +75,6 @@ export default function StatisticsScreen() {
     fetchStats();
   }, []);
 
-  const totalValue = completedTasks.reduce((sum, t) => sum + (t.value || 0), 0);
-
   const changePeriod = (direction: "prev" | "next") => {
     if (direction === "prev") {
       setPeriodIndex((prev) => (prev > 0 ? prev - 1 : periods.length - 1));
@@ -92,6 +82,51 @@ export default function StatisticsScreen() {
       setPeriodIndex((prev) => (prev < periods.length - 1 ? prev + 1 : 0));
     }
   };
+
+  const filteredTasks = filterTasksByPeriod(completedTasks, periodIndex);
+
+  const totalValue = filteredTasks.reduce((sum, t) => sum + (t.value || 0), 0);
+
+  function filterTasksByPeriod(tasks: CompletedTask[], periodIndex: number) {
+    const now = new Date();
+    if (periodIndex === 0) {
+      // Idag
+      return tasks.filter(
+        (t) =>
+          t.doneAt &&
+          t.doneAt.getDate() === now.getDate() &&
+          t.doneAt.getMonth() === now.getMonth() &&
+          t.doneAt.getFullYear() === now.getFullYear()
+      );
+    } else if (periodIndex === 1) {
+      // Förra veckan
+      const firstDayOfWeek = new Date(now);
+      firstDayOfWeek.setDate(now.getDate() - now.getDay());
+      const firstDayOfLastWeek = new Date(firstDayOfWeek);
+      firstDayOfLastWeek.setDate(firstDayOfWeek.getDate() - 7);
+      const lastDayOfLastWeek = new Date(firstDayOfWeek);
+      lastDayOfLastWeek.setDate(firstDayOfWeek.getDate() - 1);
+
+      return tasks.filter(
+        (t) =>
+          t.doneAt &&
+          t.doneAt >= firstDayOfLastWeek &&
+          t.doneAt <= lastDayOfLastWeek
+      );
+    } else if (periodIndex === 2) {
+      // Förra månaden
+      const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+      return tasks.filter(
+        (t) =>
+          t.doneAt &&
+          t.doneAt >= firstDayOfLastMonth &&
+          t.doneAt <= lastDayOfLastMonth
+      );
+    }
+    return tasks;
+  }
 
   return (
     <View style={styles.container}>
@@ -114,23 +149,24 @@ export default function StatisticsScreen() {
         <Text style={{ fontSize: 14 }}>poäng totalt</Text>
       </View>
 
-      {completedTasks.length === 0 && !loading && (
+      {filteredTasks.length === 0 && !loading && (
         <Text style={styles.noStatsText}>Ingen statistik ännu 😅</Text>
       )}
 
       <View style={styles.smallCirclesContainer}>
-        {defaultTasks.map((task, index) => (
+        {filteredTasks.map((task, index) => (
           <View
             key={index}
-            style={[styles.smallCircle, { backgroundColor: task.color }]}
+            style={[styles.smallCircle, { backgroundColor: "#29c7db" }]}
           >
             <Text style={styles.smallText}>{task.name}</Text>
+
           </View>
         ))}
       </View>
 
       <View style={styles.taskCountContainer}>
-        <Text>Antal uppgifter: {loading ? "..." : tasks.length}</Text>
+        <Text>Antal uppgifter: {loading ? "..." : filteredTasks.length}</Text>
       </View>
     </View>
   );
@@ -212,4 +248,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 20,
   },
-});
+})
