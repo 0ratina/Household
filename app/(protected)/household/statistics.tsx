@@ -4,6 +4,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { db } from "../../../src/firebase";
+import { useActiveHousehold } from "../../../src/service/activeHousehold";
 
 interface CompletedTask {
   name: string;
@@ -15,65 +16,85 @@ interface CompletedTask {
 }
 
 export default function StatisticsScreen() {
-  const [periodIndex, setPeriodIndex] = useState(0);
-  const periods = ["Idag", "Förra veckan", "Förra månaden",];
+  const { data: activeHouseholdId } = useActiveHousehold();
 
+  const [periodIndex, setPeriodIndex] = useState(0);
+  const periods = ["Idag", "Förra veckan", "Förra månaden"];
   const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [, setHouseholdId] = useState<string | null>(null);
-  const [selectedDate] = useState(new Date());
 
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
+
       try {
         const auth = getAuth();
         const user = auth.currentUser;
 
         if (!user) {
           console.warn("Ingen användare inloggad");
+          setCompletedTasks([]);
+          return;
+        }
+
+        if (!activeHouseholdId) {
+          console.warn("Ingen aktiv householdId");
+          setCompletedTasks([]);
           return;
         }
 
         const profileQ = query(
           collection(db, "profiles"),
-          where("AccountId", "==", user.uid),
+          where("AccountId", "==", user.uid)
         );
+
         const profileSnap = await getDocs(profileQ);
 
         if (profileSnap.empty) {
           console.warn("Ingen profil hittad för användaren");
+          setCompletedTasks([]);
           return;
         }
 
-        const profileData = profileSnap.docs[0].data();
-        const householdId = profileData.HouseHoldID;
-        setHouseholdId(householdId);
+        const currentProfileId = profileSnap.docs[0].id;
 
         const statsQ = query(
-          collection(db, "completedTasks"),
-          where("householdId", "==", householdId)
+          collection(db, "tasks"),
+          where("HouseHoldID", "==", activeHouseholdId)
         );
 
-        const statsSnap = await getDocs(statsQ);
-        const statsData = statsSnap.docs.map((doc) => {
-          const d = doc.data();
-          return {
-            ...d,
-            doneAt: d.doneAt?.toDate ? d.doneAt.toDate() : undefined,
-          } as CompletedTask;
+        const tasksSnap = await getDocs(statsQ);
+        const statsData: CompletedTask[] = [];
+
+        tasksSnap.docs.forEach((taskDoc) => {
+          const taskData = taskDoc.data();
+          const completions = taskData.completions || [];
+
+          completions.forEach((completion: any) => {
+            if (completion.profileId === currentProfileId) {
+              statsData.push({
+                name: taskData.title ?? "Okänd uppgift",
+                taskId: taskDoc.id,
+                userId: completion.profileId,
+                householdId: taskData.HouseHoldID,
+                value: taskData.value ?? 0,
+                doneAt: completion.timestamp?.toDate?.(),
+              });
+            }
+          });
         });
 
         setCompletedTasks(statsData);
       } catch (e) {
         console.error("Fel vid hämtning av statistik:", e);
+        setCompletedTasks([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, []);
+  }, [activeHouseholdId]);
 
   const changePeriod = (direction: "prev" | "next") => {
     if (direction === "prev") {
@@ -83,14 +104,10 @@ export default function StatisticsScreen() {
     }
   };
 
-  const filteredTasks = filterTasksByPeriod(completedTasks, periodIndex);
-
-  const totalValue = filteredTasks.reduce((sum, t) => sum + (t.value || 0), 0);
-
   function filterTasksByPeriod(tasks: CompletedTask[], periodIndex: number) {
     const now = new Date();
+
     if (periodIndex === 0) {
-      // Idag
       return tasks.filter(
         (t) =>
           t.doneAt &&
@@ -99,13 +116,17 @@ export default function StatisticsScreen() {
           t.doneAt.getFullYear() === now.getFullYear()
       );
     } else if (periodIndex === 1) {
-      // Förra veckan
       const firstDayOfWeek = new Date(now);
       firstDayOfWeek.setDate(now.getDate() - now.getDay());
+      firstDayOfWeek.setHours(0, 0, 0, 0);
+
       const firstDayOfLastWeek = new Date(firstDayOfWeek);
       firstDayOfLastWeek.setDate(firstDayOfWeek.getDate() - 7);
+      firstDayOfLastWeek.setHours(0, 0, 0, 0);
+
       const lastDayOfLastWeek = new Date(firstDayOfWeek);
       lastDayOfLastWeek.setDate(firstDayOfWeek.getDate() - 1);
+      lastDayOfLastWeek.setHours(23, 59, 59, 999);
 
       return tasks.filter(
         (t) =>
@@ -114,9 +135,25 @@ export default function StatisticsScreen() {
           t.doneAt <= lastDayOfLastWeek
       );
     } else if (periodIndex === 2) {
-      // Förra månaden
-      const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      const firstDayOfLastMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        1,
+        0,
+        0,
+        0,
+        0
+      );
+
+      const lastDayOfLastMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        0,
+        23,
+        59,
+        59,
+        999
+      );
 
       return tasks.filter(
         (t) =>
@@ -125,8 +162,13 @@ export default function StatisticsScreen() {
           t.doneAt <= lastDayOfLastMonth
       );
     }
+
     return tasks;
   }
+
+  const filteredTasks = filterTasksByPeriod(completedTasks, periodIndex);
+  const totalValue = filteredTasks.reduce((sum, t) => sum + (t.value || 0), 0);
+
 
   return (
     <View style={styles.container}>
@@ -157,7 +199,7 @@ export default function StatisticsScreen() {
         {filteredTasks.map((task, index) => (
           <View
             key={index}
-            style={[styles.smallCircle, { backgroundColor: "#29c7db" }]}
+            style={[styles.smallCircle, { backgroundColor: "#f09550" }]}
           >
             <Text style={styles.smallText}>{task.name}</Text>
 
