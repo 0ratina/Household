@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { getAuth } from "firebase/auth";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Svg, { Circle, G, Path, Text as SvgText } from "react-native-svg";
+import { AVATAR_COLORS, type AvatarEmoji } from "../../(protected)/household/profile";
 import { db } from "../../../src/firebase";
 import { useActiveHousehold } from "../../../src/service/activeHousehold";
 
@@ -15,12 +17,162 @@ interface CompletedTask {
   doneAt?: Date;
 }
 
+interface Profile {
+  id: string;
+  HouseHoldID: string[];
+  Name: string;
+  isOwner: boolean;
+  AvatarID: string;
+  AccountId: string;
+}
+
+interface PieSegment {
+  profileId: string;
+  value: number;
+  color: string;
+  avatar?: string;
+}
+
+interface TaskPieData {
+  taskId: string;
+  taskName: string;
+  segments: PieSegment[];
+}
+
+function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
+  const rad = ((angle - 90) * Math.PI) / 180;
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad),
+  };
+}
+
+function createSlicePath(
+  cx: number,
+  cy: number,
+  r: number,
+  startAngle: number,
+  endAngle: number
+) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+
+  return `
+    M ${cx} ${cy}
+    L ${start.x} ${start.y}
+    A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}
+    Z
+  `;
+}
+
+function getMidAngle(startAngle: number, endAngle: number) {
+  return (startAngle + endAngle) / 2;
+}
+
+function PieChart({
+  segments,
+  size,
+  showAvatars = false,
+}: {
+  segments: PieSegment[];
+  size: number;
+  showAvatars?: boolean;
+}) {
+  const validSegments = segments.filter((s) => Number(s.value || 0) > 0);
+  const total = validSegments.reduce((sum, s) => sum + Number(s.value || 0), 0);
+  const radius = size / 2;
+  const center = size / 2;
+
+  if (total <= 0) {
+    return (
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: "#F3F3F3",
+        }}
+      />
+    );
+  }
+
+  if (validSegments.length === 1) {
+    const onlySegment = validSegments[0];
+
+    return (
+      <Svg width={size} height={size}>
+        <G>
+          <Circle
+            cx={center}
+            cy={center}
+            r={radius}
+            fill={onlySegment.color}
+          />
+          {showAvatars && onlySegment.avatar ? (
+            <SvgText
+              x={center}
+              y={center}
+              fontSize={24}
+              textAnchor="middle"
+              alignmentBaseline="middle"
+            >
+              {onlySegment.avatar}
+            </SvgText>
+          ) : null}
+        </G>
+      </Svg>
+    );
+  }
+
+  let currentAngle = 0;
+
+  return (
+    <Svg width={size} height={size}>
+      <G>
+        {validSegments.map((segment, index) => {
+          const numericValue = Number(segment.value || 0);
+          const sweepAngle = (numericValue / total) * 360;
+          const startAngle = currentAngle;
+          const endAngle = currentAngle + sweepAngle;
+          currentAngle += sweepAngle;
+
+          const path = createSlicePath(center, center, radius, startAngle, endAngle);
+
+          const midAngle = getMidAngle(startAngle, endAngle);
+          const labelRadius = radius * 0.6;
+          const labelPoint = polarToCartesian(center, center, labelRadius, midAngle);
+
+          return (
+            <G key={`${segment.profileId}-${index}`}>
+              <Path d={path} fill={segment.color} />
+              {showAvatars && segment.avatar ? (
+                <SvgText
+                  x={labelPoint.x}
+                  y={labelPoint.y}
+                  fontSize={24}
+                  textAnchor="middle"
+                  alignmentBaseline="middle"
+                >
+                  {segment.avatar}
+                </SvgText>
+              ) : null}
+            </G>
+          );
+        })}
+      </G>
+    </Svg>
+  );
+}
+
 export default function StatisticsScreen() {
   const { data: activeHouseholdId } = useActiveHousehold();
 
   const [periodIndex, setPeriodIndex] = useState(0);
   const periods = ["Idag", "Förra veckan", "Förra månaden"];
+
   const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,39 +183,36 @@ export default function StatisticsScreen() {
         const auth = getAuth();
         const user = auth.currentUser;
 
-        if (!user) {
-          console.warn("Ingen användare inloggad");
+        if (!user || !activeHouseholdId) {
           setCompletedTasks([]);
+          setProfiles([]);
           return;
         }
 
-        if (!activeHouseholdId) {
-          console.warn("Ingen aktiv householdId");
-          setCompletedTasks([]);
-          return;
-        }
-
-        const profileQ = query(
+        const profilesQ = query(
           collection(db, "profiles"),
-          where("AccountId", "==", user.uid)
+          where("HouseHoldID", "array-contains", activeHouseholdId)
         );
 
-        const profileSnap = await getDocs(profileQ);
+        const profilesSnap = await getDocs(profilesQ);
 
-        if (profileSnap.empty) {
-          console.warn("Ingen profil hittad för användaren");
-          setCompletedTasks([]);
-          return;
-        }
+        const householdProfiles: Profile[] = profilesSnap.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Profile, "id">),
+        }));
 
-        const currentProfileId = profileSnap.docs[0].id;
+        setProfiles(householdProfiles);
 
-        const statsQ = query(
+        const profileMap = new Map(
+          householdProfiles.map((profile) => [profile.id, profile])
+        );
+
+        const tasksQ = query(
           collection(db, "tasks"),
           where("HouseHoldID", "==", activeHouseholdId)
         );
 
-        const tasksSnap = await getDocs(statsQ);
+        const tasksSnap = await getDocs(tasksQ);
         const statsData: CompletedTask[] = [];
 
         tasksSnap.docs.forEach((taskDoc) => {
@@ -71,13 +220,13 @@ export default function StatisticsScreen() {
           const completions = taskData.completions || [];
 
           completions.forEach((completion: any) => {
-            if (completion.profileId === currentProfileId) {
+            if (profileMap.has(completion.profileId)) {
               statsData.push({
                 name: taskData.title ?? "Okänd uppgift",
                 taskId: taskDoc.id,
                 userId: completion.profileId,
-                householdId: taskData.HouseHoldID,
-                value: taskData.value ?? 0,
+                householdId: taskData.HouseHoldID ?? activeHouseholdId,
+                value: Number(taskData.value ?? 0),
                 doneAt: completion.timestamp?.toDate?.(),
               });
             }
@@ -88,6 +237,7 @@ export default function StatisticsScreen() {
       } catch (e) {
         console.error("Fel vid hämtning av statistik:", e);
         setCompletedTasks([]);
+        setProfiles([]);
       } finally {
         setLoading(false);
       }
@@ -104,10 +254,10 @@ export default function StatisticsScreen() {
     }
   };
 
-  function filterTasksByPeriod(tasks: CompletedTask[], periodIndex: number) {
+  function filterTasksByPeriod(tasks: CompletedTask[], index: number) {
     const now = new Date();
 
-    if (periodIndex === 0) {
+    if (index === 0) {
       return tasks.filter(
         (t) =>
           t.doneAt &&
@@ -115,7 +265,9 @@ export default function StatisticsScreen() {
           t.doneAt.getMonth() === now.getMonth() &&
           t.doneAt.getFullYear() === now.getFullYear()
       );
-    } else if (periodIndex === 1) {
+    }
+
+    if (index === 1) {
       const firstDayOfWeek = new Date(now);
       firstDayOfWeek.setDate(now.getDate() - now.getDay());
       firstDayOfWeek.setHours(0, 0, 0, 0);
@@ -134,7 +286,9 @@ export default function StatisticsScreen() {
           t.doneAt >= firstDayOfLastWeek &&
           t.doneAt <= lastDayOfLastWeek
       );
-    } else if (periodIndex === 2) {
+    }
+
+    if (index === 2) {
       const firstDayOfLastMonth = new Date(
         now.getFullYear(),
         now.getMonth() - 1,
@@ -166,12 +320,102 @@ export default function StatisticsScreen() {
     return tasks;
   }
 
-  const filteredTasks = filterTasksByPeriod(completedTasks, periodIndex);
-  const totalValue = filteredTasks.reduce((sum, t) => sum + (t.value || 0), 0);
+  const filteredTasks = useMemo(
+    () => filterTasksByPeriod(completedTasks, periodIndex),
+    [completedTasks, periodIndex]
+  );
 
+  const hasStatsInPeriod = filteredTasks.length > 0;
+  const hasPositiveStatsInPeriod = filteredTasks.some(
+    (task) => Number(task.value ?? 0) > 0
+  );
+
+  const totalPieSegments: PieSegment[] = useMemo(() => {
+    if (!hasPositiveStatsInPeriod) return [];
+
+    const grouped = new Map<string, PieSegment>();
+
+    filteredTasks.forEach((task) => {
+      const profile = profiles.find((p) => p.id === task.userId);
+      if (!profile) return;
+
+      const taskValue = Number(task.value ?? 0);
+      if (taskValue <= 0) return;
+
+      const avatar = (profile.AvatarID || "🦊") as AvatarEmoji;
+      const color = AVATAR_COLORS[avatar] ?? "#F09550";
+
+      const existing = grouped.get(task.userId);
+
+      if (existing) {
+        existing.value += taskValue;
+      } else {
+        grouped.set(task.userId, {
+          profileId: task.userId,
+          value: taskValue,
+          color,
+          avatar,
+        });
+      }
+    });
+
+    return Array.from(grouped.values());
+  }, [filteredTasks, profiles, hasPositiveStatsInPeriod]);
+
+  const taskPieData: TaskPieData[] = useMemo(() => {
+    if (!hasPositiveStatsInPeriod) return [];
+
+    const groupedTasks = new Map<string, TaskPieData>();
+
+    filteredTasks.forEach((task) => {
+      const profile = profiles.find((p) => p.id === task.userId);
+      if (!profile) return;
+
+      const taskValue = Number(task.value ?? 0);
+      if (taskValue <= 0) return;
+
+      const avatar = (profile.AvatarID || "🦊") as AvatarEmoji;
+      const color = AVATAR_COLORS[avatar] ?? "#F09550";
+
+      const existingTask = groupedTasks.get(task.taskId);
+
+      if (!existingTask) {
+        groupedTasks.set(task.taskId, {
+          taskId: task.taskId,
+          taskName: task.name,
+          segments: [
+            {
+              profileId: task.userId,
+              value: taskValue,
+              color,
+            },
+          ],
+        });
+        return;
+      }
+
+      const existingSegment = existingTask.segments.find(
+        (s) => s.profileId === task.userId
+      );
+
+      if (existingSegment) {
+        existingSegment.value += taskValue;
+      } else {
+        existingTask.segments.push({
+          profileId: task.userId,
+          value: taskValue,
+          color,
+        });
+      }
+    });
+
+    return Array.from(groupedTasks.values()).filter(
+      (task) => task.segments.length > 0
+    );
+  }, [filteredTasks, profiles, hasPositiveStatsInPeriod]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Hushållet</Text>
 
       <View style={styles.navRow}>
@@ -186,70 +430,76 @@ export default function StatisticsScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bigCircle}>
-        <Text style={styles.bigText}>{loading ? "..." : `${totalValue}`}</Text>
-        <Text style={{ fontSize: 14 }}>poäng totalt</Text>
-      </View>
+      {hasPositiveStatsInPeriod ? (
+        <>
+          <PieChart segments={totalPieSegments} size={220} showAvatars />
+          <Text style={styles.totalLabel}>Totalt</Text>
+        </>
+      ) : (
+        <>
+          <View style={styles.bigCircleFallback}>
+            <Text style={styles.bigFallbackText}>0</Text>
+          </View>
+          <Text style={styles.totalLabel}>Totalt</Text>
+        </>
+      )}
 
-      {filteredTasks.length === 0 && !loading && (
+      {!hasStatsInPeriod && !loading && (
         <Text style={styles.noStatsText}>Ingen statistik ännu 😅</Text>
       )}
 
-      <View style={styles.smallCirclesContainer}>
-        {filteredTasks.map((task, index) => (
-          <View
-            key={index}
-            style={[styles.smallCircle, { backgroundColor: "#f09550" }]}
-          >
-            <Text style={styles.smallText}>{task.name}</Text>
-
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.taskCountContainer}>
-        <Text>Antal uppgifter: {loading ? "..." : filteredTasks.length}</Text>
-      </View>
-    </View>
+      {hasPositiveStatsInPeriod && (
+        <View style={styles.tasksGrid}>
+          {taskPieData.map((task) => (
+            <View key={task.taskId} style={styles.taskItem}>
+              <PieChart segments={task.segments} size={104} />
+              <Text style={styles.taskLabel} numberOfLines={2}>
+                {task.taskName}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
+const BG = "#F3F3F3";
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#fff",
+    flexGrow: 1,
+    backgroundColor: BG,
     alignItems: "center",
     paddingTop: 80,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
   },
   title: {
     fontSize: 26,
     fontWeight: "700",
     marginBottom: 10,
+    color: "#111",
   },
   navRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 40,
-    marginBottom: 30,
+    marginBottom: 20,
   },
   periodText: {
     fontSize: 18,
     fontWeight: "500",
     color: "#333",
+    minWidth: 110,
+    textAlign: "center",
   },
-  bigCircle: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "#F7C59F",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  bigText: {
-    fontSize: 42,
-    fontWeight: "900",
-    color: "#333",
+  totalLabel: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111",
+    marginTop: 8,
+    marginBottom: 28,
   },
   noStatsText: {
     fontSize: 16,
@@ -257,37 +507,35 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 20,
   },
-  smallCirclesContainer: {
+  tasksGrid: {
+    width: "100%",
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
     gap: 20,
-    paddingVertical: 20,
   },
-  smallCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  taskItem: {
+    width: 110,
     alignItems: "center",
-    justifyContent: "center",
-    padding: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
   },
-  smallText: {
-    color: "#fff",
-    fontWeight: "700",
-    textAlign: "center",
+  taskLabel: {
+    marginTop: 8,
     fontSize: 14,
+    fontWeight: "500",
+    color: "#111",
+    textAlign: "center",
   },
-  taskCountContainer: {
-    padding: 10,
-    backgroundColor: "#F7C59F",
-    borderRadius: 10,
+  bigCircleFallback: {
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "#F3F3F3",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
   },
-})
+  bigFallbackText: {
+    fontSize: 42,
+    fontWeight: "700",
+    color: "#333",
+  },
+});
