@@ -1,23 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import {
-    collection,
-    doc,
-    getDocs,
-    query,
-    setDoc,
-    where,
+  collection,
+  doc,
+  getDocs,
+  query,
+  setDoc,
+  where,
 } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { auth, db } from "../../../src/firebase";
 
@@ -30,10 +30,10 @@ export interface Profile {
   AccountId: string;
 }
 
-const AVATARS = ["🦊", "🐷", "🐸", "🐥", "🐙", "🐬", "🦉", "🦄"] as const;
-type AvatarEmoji = (typeof AVATARS)[number];
+export const AVATARS = ["🦊", "🐷", "🐸", "🐥", "🐙", "🐬", "🦉", "🦄"] as const;
+export type AvatarEmoji = (typeof AVATARS)[number];
 
-const AVATAR_COLORS: Record<AvatarEmoji, string> = {
+export const AVATAR_COLORS: Record<AvatarEmoji, string> = {
   "🦊": "#FF7A45",
   "🐷": "#FF92B0",
   "🐸": "#4CAF50",
