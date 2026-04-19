@@ -23,7 +23,7 @@ import { auth, db } from "../../../src/firebase";
 
 export interface Profile {
   id: string;
-  HouseholdID: string;
+  HouseHoldID: string[];
   Name: string;
   isOwner: boolean;
   AvatarID: string;
@@ -58,7 +58,7 @@ async function getProfilesForAccount(accountId: string) {
 async function getUsedAvatars(householdId: string) {
   const qy = query(
     collection(db, "profiles"),
-    where("HouseholdID", "==", householdId),
+    where("HouseHoldID", "array-contains", householdId),
   );
   const snap = await getDocs(qy);
   const used = new Set<string>();
@@ -105,17 +105,24 @@ export default function ProfileScreen() {
       return;
     }
     if (!selectedHouseholdId) {
-      setSelectedHouseholdId(myProfiles[0].HouseholdID);
+      setSelectedHouseholdId(myProfiles[0].HouseHoldID?.[0] ?? null);
       return;
     }
-    const stillExists = myProfiles.some(
-      (p) => p.HouseholdID === selectedHouseholdId,
+    const stillExists = myProfiles.some((p) =>
+      p.HouseHoldID?.includes(selectedHouseholdId),
     );
-    if (!stillExists) setSelectedHouseholdId(myProfiles[0].HouseholdID);
+    if (!stillExists) {
+      setSelectedHouseholdId(myProfiles[0].HouseHoldID?.[0] ?? null);
+    }
   }, [myProfiles, selectedHouseholdId]);
 
   const selectedProfile = useMemo(
-    () => myProfiles.find((p) => p.HouseholdID === selectedHouseholdId) ?? null,
+    () =>
+      myProfiles.find((p) =>
+        selectedHouseholdId
+          ? p.HouseHoldID?.includes(selectedHouseholdId)
+          : false,
+      ) ?? null,
     [myProfiles, selectedHouseholdId],
   );
 
@@ -174,6 +181,9 @@ export default function ProfileScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["profiles-by-account", uid],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["used-avatars", selectedHouseholdId],
       });
 
       if (selectedHouseholdId) {
@@ -293,6 +303,7 @@ export default function ProfileScreen() {
               return (
                 <TouchableOpacity
                   key={a}
+                  disabled={avatarDisabled || takenByOther}
                   style={[
                     styles.gridItem,
                     {
@@ -313,11 +324,6 @@ export default function ProfileScreen() {
                   }}
                 >
                   <Text style={{ fontSize: 28 }}>{a}</Text>
-                  {takenByOther && (
-                    <Text style={{ fontSize: 10, marginTop: 2, color: "#666" }}>
-                      upptagen
-                    </Text>
-                  )}
                 </TouchableOpacity>
               );
             })}
