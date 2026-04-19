@@ -67,6 +67,6 @@ För väl godkänt (VG)
 
 ## () CI implementerat
 
-## ()Kompletta statistikvyer (nuvarande vecka, förra veckan, förra månaden)
+## (x)Kompletta statistikvyer (nuvarande vecka, förra veckan, förra månaden)
 
 ## ()Normalisering av statistik vid pausade användare
