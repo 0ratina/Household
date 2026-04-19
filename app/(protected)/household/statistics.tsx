@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { getAuth } from "firebase/auth";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Circle, G, Path, Text as SvgText } from "react-native-svg";
 import { AVATAR_COLORS, type AvatarEmoji } from "../../(protected)/household/profile";
@@ -175,76 +176,78 @@ export default function StatisticsScreen() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      setLoading(true);
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
 
-      try {
-        const auth = getAuth();
-        const user = auth.currentUser;
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
 
-        if (!user || !activeHouseholdId) {
-          setCompletedTasks([]);
-          setProfiles([]);
-          return;
-        }
-
-        const profilesQ = query(
-          collection(db, "profiles"),
-          where("HouseHoldID", "array-contains", activeHouseholdId)
-        );
-
-        const profilesSnap = await getDocs(profilesQ);
-
-        const householdProfiles: Profile[] = profilesSnap.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Omit<Profile, "id">),
-        }));
-
-        setProfiles(householdProfiles);
-
-        const profileMap = new Map(
-          householdProfiles.map((profile) => [profile.id, profile])
-        );
-
-        const tasksQ = query(
-          collection(db, "tasks"),
-          where("HouseHoldID", "==", activeHouseholdId)
-        );
-
-        const tasksSnap = await getDocs(tasksQ);
-        const statsData: CompletedTask[] = [];
-
-        tasksSnap.docs.forEach((taskDoc) => {
-          const taskData = taskDoc.data();
-          const completions = taskData.completions || [];
-
-          completions.forEach((completion: any) => {
-            if (profileMap.has(completion.profileId)) {
-              statsData.push({
-                name: taskData.title ?? "Okänd uppgift",
-                taskId: taskDoc.id,
-                userId: completion.profileId,
-                householdId: taskData.HouseHoldID ?? activeHouseholdId,
-                value: Number(taskData.value ?? 0),
-                doneAt: completion.timestamp?.toDate?.(),
-              });
-            }
-          });
-        });
-
-        setCompletedTasks(statsData);
-      } catch (e) {
-        console.error("Fel vid hämtning av statistik:", e);
+      if (!user || !activeHouseholdId) {
         setCompletedTasks([]);
         setProfiles([]);
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
-    fetchStats();
+      const profilesQ = query(
+        collection(db, "profiles"),
+        where("HouseHoldID", "array-contains", activeHouseholdId)
+      );
+
+      const profilesSnap = await getDocs(profilesQ);
+
+      const householdProfiles: Profile[] = profilesSnap.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Profile, "id">),
+      }));
+
+      setProfiles(householdProfiles);
+
+      const profileMap = new Map(
+        householdProfiles.map((profile) => [profile.id, profile])
+      );
+
+      const tasksQ = query(
+        collection(db, "tasks"),
+        where("HouseHoldID", "==", activeHouseholdId)
+      );
+
+      const tasksSnap = await getDocs(tasksQ);
+      const statsData: CompletedTask[] = [];
+
+      tasksSnap.docs.forEach((taskDoc) => {
+        const taskData = taskDoc.data();
+        const completions = taskData.completions || [];
+
+        completions.forEach((completion: any) => {
+          if (profileMap.has(completion.profileId)) {
+            statsData.push({
+              name: taskData.title ?? "Okänd uppgift",
+              taskId: taskDoc.id,
+              userId: completion.profileId,
+              householdId: taskData.HouseHoldID ?? activeHouseholdId,
+              value: Number(taskData.value ?? 0),
+              doneAt: completion.timestamp?.toDate?.(),
+            });
+          }
+        });
+      });
+
+      setCompletedTasks(statsData);
+    } catch (e) {
+      console.error("Fel vid hämtning av statistik:", e);
+      setCompletedTasks([]);
+      setProfiles([]);
+    } finally {
+      setLoading(false);
+    }
   }, [activeHouseholdId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchStats();
+    }, [fetchStats])
+  );
 
   const changePeriod = (direction: "prev" | "next") => {
     if (direction === "prev") {
