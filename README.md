@@ -59,9 +59,9 @@ CI/CD: (lägg till om ni har, t.ex. GitHub Actions eller EAS)
 
 ## (x) Användare kan gå med i hushåll via kod
 
-## (delvis) Sysslor kan läggas till, redigeras och markeras som gjorda
+## (x) Sysslor kan läggas till, redigeras och markeras som gjorda
 
-## (delvis)Statistikvy visar hushållets fördelning av sysslor och poäng
+## (x)Statistikvy visar hushållets fördelning av sysslor och poäng
 
 För väl godkänt (VG)
 
