@@ -5,6 +5,7 @@ import Constants from "expo-constants";
 import { getReactNativePersistence, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
+
 const firebaseConfig = Constants.expoConfig?.extra?.firebase;
 
 const app = initializeApp(firebaseConfig);
