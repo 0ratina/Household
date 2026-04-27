@@ -1,159 +1,150 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { router, Stack, useLocalSearchParams } from "expo-router";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { getMyProfile } from "../../../src/api/getProfile";
-import { addTaskCompletion, getTask } from "../../../src/api/taskOverview";
-import { useActiveHousehold } from "../../../src/service/activeHousehold";
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
+import {router, Stack, useFocusEffect, useLocalSearchParams} from 'expo-router'
+import {useCallback} from 'react'
+import {ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native'
+import {getMyProfile} from '../../../src/api/getProfile'
+import {addTaskCompletion, getTask} from '../../../src/api/taskOverview'
+import {useActiveHousehold} from '../../../src/service/activeHousehold'
 
 export default function taskOverview() {
-  const { taskId } = useLocalSearchParams();
-  const { selectedDate: selectedDateParam } = useLocalSearchParams();
-  let parsedDate: string | undefined;
-  if (Array.isArray(selectedDateParam)) {
-    parsedDate = selectedDateParam[0];
-  } else {
-    parsedDate = selectedDateParam;
-  }
-  const selectedDate = parsedDate ? new Date(parsedDate) : new Date();
-  const queryClient = useQueryClient();
-  const { data: activeHousehold } = useActiveHousehold();
+   const {taskId} = useLocalSearchParams()
+   const {selectedDate: selectedDateParam} = useLocalSearchParams()
+   let parsedDate: string | undefined
+   if (Array.isArray(selectedDateParam)) {
+      parsedDate = selectedDateParam[0]
+   } else {
+      parsedDate = selectedDateParam
+   }
+   const selectedDate = parsedDate ? new Date(parsedDate) : new Date()
+   const queryClient = useQueryClient()
+   const {data: activeHousehold} = useActiveHousehold()
 
-  const { data: myProfile } = useQuery({
-    queryKey: ["myProfile", activeHousehold],
-    queryFn: () => getMyProfile(),
-  });
-  const { data: task } = useQuery({
-    queryKey: ["task", taskId],
-    enabled: !!taskId,
-    queryFn: () => getTask(taskId as string, selectedDate),
-  });
+   const {data: myProfile} = useQuery({
+      queryKey: ['myProfile', activeHousehold],
+      queryFn: () => getMyProfile(),
+   })
+   const {data: task, refetch: refetchTask} = useQuery({
+      queryKey: ['task', taskId],
+      enabled: !!taskId,
+      queryFn: () => getTask(taskId as string, selectedDate),
+   })
 
-  const toggle = useMutation({
-    mutationFn: () => {
-      if (!myProfile?.id) throw new Error("No profile id");
-      return addTaskCompletion(taskId as string, myProfile.id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      router.back();
-    },
-  });
+   useFocusEffect(
+      useCallback(() => {
+         if (!taskId) return
+         refetchTask()
+      }, [taskId, refetchTask]),
+   )
 
-  const today = new Date();
-  const isToday =
-    selectedDate.getFullYear() === today.getFullYear() &&
-    selectedDate.getMonth() === today.getMonth() &&
-    selectedDate.getDate() === today.getDate();
+   const toggle = useMutation({
+      mutationFn: () => {
+         if (!myProfile?.id) throw new Error('No profile id')
+         return addTaskCompletion(taskId as string, myProfile.id)
+      },
+      onSuccess: () => {
+         queryClient.invalidateQueries({queryKey: ['task', taskId]})
+         queryClient.invalidateQueries({queryKey: ['tasks']})
+         router.back()
+      },
+   })
 
-  return (
-    <>
-      <Stack.Screen options={{ title: "Syssla", headerBackTitle: "Sysslor" }} />
+   const today = new Date()
+   const isToday =
+      selectedDate.getFullYear() === today.getFullYear() && selectedDate.getMonth() === today.getMonth() && selectedDate.getDate() === today.getDate()
 
-      <View style={styles.container}>
-        <View style={styles.contentWrapper}>
-          <ScrollView style={styles.content}>
-            <View style={styles.card}>
-              <Text style={styles.cardText}>{task?.title}</Text>
+   return (
+      <>
+         <Stack.Screen options={{title: 'Syssla', headerBackTitle: 'Sysslor'}} />
+
+         <View style={styles.container}>
+            <View style={styles.contentWrapper}>
+               <ScrollView style={styles.content}>
+                  <View style={styles.card}>
+                     <Text style={styles.cardText}>{task?.title}</Text>
+                  </View>
+
+                  <View style={styles.infoCard}>
+                     <Text style={styles.infoText}>{task?.desc || 'Ingen Beskrivning'} </Text>
+                  </View>
+
+                  <View style={styles.infoCard}>
+                     <Text style={[styles.smallerInfoText, {color: '#2E8B57'}]}>🔁 Var {task?.repeatDay} dag </Text>
+                  </View>
+
+                  <View style={styles.infoCard}>
+                     <Text style={[styles.smallerInfoText, {color: '#7B61FF'}]}>⚡Värde {task?.value}</Text>
+                  </View>
+               </ScrollView>
+
+               {isToday && (
+                  <TouchableOpacity style={styles.button} onPress={() => toggle.mutate()}>
+                     <Text style={{fontSize: 18}}>Markera som gjord</Text>
+                  </TouchableOpacity>
+               )}
             </View>
-
-            <View style={styles.infoCard}>
-              <Text style={styles.infoText}>
-                {task?.desc || "Ingen Beskrivning"}{" "}
-              </Text>
-            </View>
-
-            <View style={styles.infoCard}>
-              <Text style={[styles.smallerInfoText, { color: "#2E8B57" }]}>
-                🔁 Var {task?.repeatDay} dag{" "}
-              </Text>
-            </View>
-
-            <View style={styles.infoCard}>
-              <Text style={[styles.smallerInfoText, { color: "#7B61FF" }]}>
-                ⚡Värde {task?.value}
-              </Text>
-            </View>
-          </ScrollView>
-
-          {isToday && (
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => toggle.mutate()}
-            >
-              <Text style={{ fontSize: 18 }}>Markera som gjord</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    </>
-  );
+         </View>
+      </>
+   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#EFEFEF",
-  },
-  button: {
-    alignSelf: "center",
-    backgroundColor: "#fff",
-    borderRadius: 50,
-    paddingVertical: 20,
-    paddingHorizontal: 30,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    marginBottom: 14,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  infoCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    marginBottom: 14,
-    padding: 25,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  cardText: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  infoText: {
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  smallerInfoText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  content: {
-    flexGrow: 1,
-  },
-  contentWrapper: {
-    flex: 1,
-    justifyContent: "space-between",
-    padding: 16,
-  },
-});
+   container: {
+      flex: 1,
+      backgroundColor: '#EFEFEF',
+   },
+   button: {
+      alignSelf: 'center',
+      backgroundColor: '#fff',
+      borderRadius: 50,
+      paddingVertical: 20,
+      paddingHorizontal: 30,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+   },
+   card: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 14,
+      marginBottom: 14,
+      padding: 16,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      shadowOffset: {width: 0, height: 4},
+      elevation: 3,
+   },
+   infoCard: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 14,
+      marginBottom: 14,
+      padding: 25,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      shadowOffset: {width: 0, height: 4},
+      elevation: 3,
+   },
+   cardText: {
+      fontSize: 18,
+      fontWeight: '700',
+   },
+   infoText: {
+      fontSize: 17,
+      fontWeight: '700',
+   },
+   smallerInfoText: {
+      fontSize: 15,
+      fontWeight: '600',
+   },
+   content: {
+      flexGrow: 1,
+   },
+   contentWrapper: {
+      flex: 1,
+      justifyContent: 'space-between',
+      padding: 16,
+   },
+})
