@@ -16,6 +16,13 @@ interface Task {
    updatedAt?: Date
 }
 
+type TaskFormValues = {
+   title: string
+   desc: string
+   repeatDay: number
+   value: number
+}
+
 type PillProps = {
    label: string | number
    tone?: 'default' | 'repeat' | 'muted'
@@ -49,6 +56,7 @@ export default function UpdateTaskScreen() {
    const [desc, setDesc] = useState('')
    const [repeatDay, setRepeatDay] = useState(1)
    const [value, setValue] = useState(1)
+   const [initialTaskValues, setInitialTaskValues] = useState<TaskFormValues | null>(null)
 
    const [isFetching, setIsFetching] = useState(true)
    const [isSaving, setIsSaving] = useState(false)
@@ -73,11 +81,21 @@ export default function UpdateTaskScreen() {
          }
 
          const data = docSnap.data() as Task
+         const nextTitle = data.title ?? ''
+         const nextDesc = data.desc ?? ''
+         const nextRepeatDay = typeof data.repeatDay === 'number' && data.repeatDay > 0 ? data.repeatDay : 1
+         const nextValue = typeof data.value === 'number' && data.value > 0 ? data.value : 1
 
-         setTitle(data.title ?? '')
-         setDesc(data.desc ?? '')
-         setRepeatDay(typeof data.repeatDay === 'number' && data.repeatDay > 0 ? data.repeatDay : 1)
-         setValue(typeof data.value === 'number' && data.value > 0 ? data.value : 1)
+         setTitle(nextTitle)
+         setDesc(nextDesc)
+         setRepeatDay(nextRepeatDay)
+         setValue(nextValue)
+         setInitialTaskValues({
+            title: nextTitle.trim(),
+            desc: nextDesc.trim(),
+            repeatDay: nextRepeatDay,
+            value: nextValue,
+         })
       } catch (error) {
          console.error('Fel vid hämtning av task:', error)
          Alert.alert('Fel', 'Kunde inte hämta tasken.')
@@ -98,6 +116,17 @@ export default function UpdateTaskScreen() {
    const handleIncrementValue = () => {
       setValue((current) => (current >= 5 ? 1 : current + 1))
    }
+
+   const isDirty = useMemo(() => {
+      if (!initialTaskValues) return false
+
+      return (
+         title.trim() !== initialTaskValues.title ||
+         desc.trim() !== initialTaskValues.desc ||
+         repeatDay !== initialTaskValues.repeatDay ||
+         value !== initialTaskValues.value
+      )
+   }, [desc, initialTaskValues, repeatDay, title, value])
 
    const handleUpdate = async () => {
       const trimmedTitle = title.trim()
@@ -125,10 +154,7 @@ export default function UpdateTaskScreen() {
             updatedAt: new Date(),
          })
 
-         await Promise.all([
-            queryClient.invalidateQueries({queryKey: ['task', taskId]}),
-            queryClient.invalidateQueries({queryKey: ['tasks']}),
-         ])
+         await Promise.all([queryClient.invalidateQueries({queryKey: ['task', taskId]}), queryClient.invalidateQueries({queryKey: ['tasks']})])
 
          Alert.alert('Klart', 'Task uppdaterad! ✅')
          router.back()
@@ -199,7 +225,11 @@ export default function UpdateTaskScreen() {
          </KeyboardAvoidingView>
 
          <View style={styles.bottomBar}>
-            <TouchableOpacity style={[styles.action, styles.actionDivider]} activeOpacity={0.8} onPress={handleUpdate} disabled={isSaving}>
+            <TouchableOpacity
+               style={[styles.action, styles.actionDivider, !isDirty && styles.actionDisabled]}
+               activeOpacity={0.8}
+               onPress={handleUpdate}
+               disabled={isSaving || !isDirty}>
                <Ionicons name='create-outline' size={22} style={{marginRight: 10}} />
                <Text style={styles.actionLabel}>{isSaving ? 'Sparar...' : 'Ändra'}</Text>
             </TouchableOpacity>
@@ -350,5 +380,9 @@ const styles = StyleSheet.create({
    actionLabel: {
       fontSize: 16,
       fontWeight: '600',
+   },
+
+   actionDisabled: {
+      opacity: 0.45,
    },
 })
