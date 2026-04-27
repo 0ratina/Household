@@ -14,6 +14,7 @@ export default function OverviewScreen() {
    const {householdId} = useLocalSearchParams()
    const [selectedDate, setSelectedDate] = useState<Date>(new Date())
    const [profiles, setProfiles] = useState<Profile[]>([])
+   const [editMode, setEditMode] = useState(false)
    const longPressTriggered = useRef(false)
 
    const activeHouseholdId = typeof householdId === 'string' ? householdId : Array.isArray(householdId) ? householdId[0] : null
@@ -139,7 +140,7 @@ export default function OverviewScreen() {
                      return (
                         <TouchableOpacity
                            key={task.id}
-                           style={styles.taskCard}
+                           style={[styles.taskCard, editMode && styles.taskCardEdit]}
                            delayLongPress={300}
                            onLongPress={() => {
                               longPressTriggered.current = true
@@ -151,6 +152,14 @@ export default function OverviewScreen() {
                            onPress={() => {
                               if (longPressTriggered.current) {
                                  longPressTriggered.current = false
+                                 return
+                              }
+
+                              if (editMode) {
+                                 router.push({
+                                    pathname: '/updateTask',
+                                    params: {id: task.id},
+                                 })
                                  return
                               }
 
@@ -209,14 +218,21 @@ export default function OverviewScreen() {
                   })}
             </ScrollView>
 
-            <TouchableOpacity
-               style={styles.addButton}
-               onPress={() => {
-                  console.log('öppnar CreateTask med householdId', householdId)
-                  router.push(`/createtask?householdId=${activeHouseholdId}`)
-               }}>
-               <Text style={styles.addButtonText}>+ Lägg till</Text>
-            </TouchableOpacity>
+            <View style={styles.buttonRow}>
+               <TouchableOpacity
+                  style={[styles.addButton, styles.buttonFlex]}
+                  onPress={() => {
+                     router.push(`/createtask?householdId=${activeHouseholdId}`)
+                  }}>
+                  <Text style={styles.addButtonText}>+ Lägg till</Text>
+               </TouchableOpacity>
+
+               <TouchableOpacity
+                  style={[styles.addButton, styles.buttonFlex, editMode && styles.editButtonActive]}
+                  onPress={() => setEditMode((prev) => !prev)}>
+                  <Text style={styles.addButtonText}>{editMode ? '✓ Klar' : '✎ Ändra'}</Text>
+               </TouchableOpacity>
+            </View>
          </View>
       </View>
    )
@@ -248,21 +264,39 @@ const styles = StyleSheet.create({
       fontSize: 13,
    },
 
+   buttonRow: {
+      flexDirection: 'row',
+      gap: 10,
+      marginHorizontal: 16,
+      marginTop: 16,
+      marginBottom: 8,
+   },
+
+   buttonFlex: {
+      flex: 1,
+      marginHorizontal: 0,
+   },
+
    addButton: {
       backgroundColor: '#111',
       paddingVertical: 14,
       borderRadius: 40,
       alignItems: 'center',
       justifyContent: 'center',
-      marginHorizontal: 16,
-      marginTop: 16,
-      marginBottom: 8,
    },
 
    addButtonText: {
       color: '#fff',
       fontSize: 16,
       fontWeight: '600',
+   },
+
+   editButtonActive: {
+      backgroundColor: '#2E8B57',
+   },
+
+   taskCardEdit: {
+      backgroundColor: '#E8F5E9',
    },
 
    codeBanner: {

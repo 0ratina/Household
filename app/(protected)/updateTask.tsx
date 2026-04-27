@@ -1,4 +1,5 @@
 import {Ionicons} from '@expo/vector-icons'
+import {useQueryClient} from '@tanstack/react-query'
 import {router, useLocalSearchParams} from 'expo-router'
 import {doc, getDoc, updateDoc} from 'firebase/firestore'
 import {useCallback, useEffect, useMemo, useState} from 'react'
@@ -35,6 +36,7 @@ function Pill({label, tone = 'default', onPress}: PillProps) {
 
 export default function UpdateTaskScreen() {
    const params = useLocalSearchParams()
+   const queryClient = useQueryClient()
 
    const taskId = useMemo(() => {
       const rawId = params.id
@@ -122,6 +124,11 @@ export default function UpdateTaskScreen() {
             value,
             updatedAt: new Date(),
          })
+
+         await Promise.all([
+            queryClient.invalidateQueries({queryKey: ['task', taskId]}),
+            queryClient.invalidateQueries({queryKey: ['tasks']}),
+         ])
 
          Alert.alert('Klart', 'Task uppdaterad! ✅')
          router.back()
