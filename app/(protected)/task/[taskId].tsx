@@ -7,6 +7,21 @@ import {getMyProfile} from '../../../src/api/getProfile'
 import {addTaskCompletion, getTask} from '../../../src/api/taskOverview'
 import {useActiveHousehold} from '../../../src/service/activeHousehold'
 
+type PillProps = {
+   label: string | number
+   tone?: 'default' | 'repeat' | 'muted'
+}
+
+function Pill({label, tone = 'default'}: PillProps) {
+   const toneStyle = tone === 'repeat' ? styles.pillRepeat : tone === 'muted' ? styles.pillMuted : styles.pillDefault
+
+   return (
+      <View style={[styles.pill, toneStyle]}>
+         <Text style={[styles.pillText, tone === 'muted' && styles.pillTextMuted]}>{label}</Text>
+      </View>
+   )
+}
+
 export default function taskOverview() {
    const {taskId} = useLocalSearchParams()
    const {selectedDate: selectedDateParam} = useLocalSearchParams()
@@ -63,21 +78,30 @@ export default function taskOverview() {
 
          <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
-                  <View style={styles.card}>
-                     <Text style={styles.cardText}>{task?.title}</Text>
-                  </View>
+               <View style={[styles.card, styles.input]}>
+                  <Text style={styles.inputText}>{task?.title || ''}</Text>
+               </View>
 
-                  <View style={styles.infoCard}>
-                     <Text style={styles.infoText}>{task?.desc || 'Ingen Beskrivning'} </Text>
-                  </View>
+               <View style={[styles.card, styles.textarea]}>
+                  <Text style={styles.textareaText}>{task?.desc || 'Ingen Beskrivning'}</Text>
+               </View>
 
-                  <View style={styles.infoCard}>
-                     <Text style={[styles.smallerInfoText, {color: '#2E8B57'}]}>🔁 Var {task?.repeatDay} dag </Text>
+               <View style={[styles.card, styles.rowBetween]}>
+                  <Text style={styles.rowLabel}>Återkommer:</Text>
+                  <View style={styles.rowRight}>
+                     <Text style={styles.subtle}>var</Text>
+                     <Pill tone='repeat' label={task?.repeatDay ?? '-'} />
+                     <Text style={styles.subtle}>dag</Text>
                   </View>
+               </View>
 
-                  <View style={styles.infoCard}>
-                     <Text style={[styles.smallerInfoText, {color: '#7B61FF'}]}>⚡Värde {task?.value}</Text>
+               <View style={[styles.card, {padding: 14}]}>
+                  <View style={[styles.rowBetween, {marginBottom: 4}]}>
+                     <Text style={styles.rowLabel}>Värde:</Text>
+                     <Pill tone='muted' label={task?.value ?? '-'} />
                   </View>
+                  <Text style={styles.helper}>Hur energikrävande är sysslan?</Text>
+               </View>
             </ScrollView>
 
             <View style={styles.bottomBar}>
@@ -109,35 +133,80 @@ const styles = StyleSheet.create({
       backgroundColor: '#FFFFFF',
       borderRadius: 14,
       marginBottom: 14,
-      padding: 16,
       shadowColor: '#000',
       shadowOpacity: 0.08,
       shadowRadius: 8,
       shadowOffset: {width: 0, height: 4},
       elevation: 3,
    },
-   infoCard: {
-      backgroundColor: '#FFFFFF',
-      borderRadius: 14,
-      marginBottom: 14,
-      padding: 25,
-      shadowColor: '#000',
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      shadowOffset: {width: 0, height: 4},
-      elevation: 3,
+   input: {
+      paddingHorizontal: 16,
+      paddingVertical: 14,
    },
-   cardText: {
-      fontSize: 18,
+   inputText: {
+      fontSize: 16,
+      color: '#1A1A1A',
+   },
+   textarea: {
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      minHeight: 120,
+   },
+   textareaText: {
+      fontSize: 16,
+      color: '#1A1A1A',
+   },
+   rowBetween: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+   },
+   rowLabel: {
+      fontSize: 16,
       fontWeight: '700',
    },
-   infoText: {
-      fontSize: 17,
-      fontWeight: '700',
+   rowRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
    },
-   smallerInfoText: {
+   subtle: {
       fontSize: 15,
-      fontWeight: '600',
+      color: '#555',
+      marginHorizontal: 4,
+   },
+   helper: {
+      fontSize: 13,
+      color: '#7A7A7A',
+   },
+   pill: {
+      minWidth: 28,
+      height: 28,
+      borderRadius: 14,
+      paddingHorizontal: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+   },
+   pillText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: '#fff',
+   },
+   pillTextMuted: {
+      color: '#444',
+   },
+   pillRepeat: {
+      backgroundColor: '#C54B53',
+   },
+   pillDefault: {
+      backgroundColor: '#333',
+   },
+   pillMuted: {
+      backgroundColor: '#EFEFEF',
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.08)',
    },
    content: {
       padding: 16,
