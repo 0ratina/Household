@@ -20,6 +20,7 @@ import {
   View,
 } from "react-native";
 import { auth, db } from "../../../src/firebase";
+import { useActiveHousehold } from "../../../src/service/activeHousehold";
 
 export interface Profile {
   id: string;
@@ -88,6 +89,7 @@ async function saveProfileChanges(
 export default function ProfileScreen() {
   const uid = auth.currentUser?.uid ?? null;
   const queryClient = useQueryClient();
+  const { data: activeHouseholdId } = useActiveHousehold();
 
   const { data: myProfiles = [] } = useQuery({
     queryKey: ["profiles-by-account", uid],
@@ -95,45 +97,24 @@ export default function ProfileScreen() {
     queryFn: () => getProfilesForAccount(uid!),
   });
 
-  const [selectedHouseholdId, setSelectedHouseholdId] = useState<string | null>(
-    null,
-  );
-
-  useEffect(() => {
-    if (myProfiles.length === 0) {
-      setSelectedHouseholdId(null);
-      return;
-    }
-    if (!selectedHouseholdId) {
-      setSelectedHouseholdId(myProfiles[0].HouseHoldID?.[0] ?? null);
-      return;
-    }
-    const stillExists = myProfiles.some((p) =>
-      p.HouseHoldID?.includes(selectedHouseholdId),
-    );
-    if (!stillExists) {
-      setSelectedHouseholdId(myProfiles[0].HouseHoldID?.[0] ?? null);
-    }
-  }, [myProfiles, selectedHouseholdId]);
-
   const selectedProfile = useMemo(
     () =>
       myProfiles.find((p) =>
-        selectedHouseholdId
-          ? p.HouseHoldID?.includes(selectedHouseholdId)
+        activeHouseholdId
+          ? p.HouseHoldID?.includes(activeHouseholdId)
           : false,
       ) ?? null,
-    [myProfiles, selectedHouseholdId],
+    [myProfiles, activeHouseholdId],
   );
 
   const { data: usedAvatars } = useQuery({
-    queryKey: ["used-avatars", selectedHouseholdId],
-    enabled: !!selectedHouseholdId,
-    queryFn: () => getUsedAvatars(selectedHouseholdId!),
+    queryKey: ["used-avatars", activeHouseholdId],
+    enabled: !!activeHouseholdId,
+    queryFn: () => getUsedAvatars(activeHouseholdId!),
   });
 
   const [hasTouchedAvatar, setHasTouchedAvatar] = useState(false);
-  useEffect(() => setHasTouchedAvatar(false), [selectedHouseholdId]);
+  useEffect(() => setHasTouchedAvatar(false), [activeHouseholdId]);
 
   const [nickname, setNickname] = useState("");
   const [avatarId, setAvatarId] = useState<AvatarEmoji>("🦊");
@@ -183,16 +164,16 @@ export default function ProfileScreen() {
         queryKey: ["profiles-by-account", uid],
       });
       await queryClient.invalidateQueries({
-        queryKey: ["used-avatars", selectedHouseholdId],
+        queryKey: ["used-avatars", activeHouseholdId],
       });
 
-      if (selectedHouseholdId) {
+      if (activeHouseholdId) {
         await queryClient.invalidateQueries({
-          queryKey: ["tasks", selectedHouseholdId],
+          queryKey: ["tasks", activeHouseholdId],
           exact: false,
         });
 
-        router.push(`/household/overview?householdId=${selectedHouseholdId}`);
+        router.push(`/household/overview?householdId=${activeHouseholdId}`);
       } else {
         router.back();
       }
@@ -229,7 +210,7 @@ export default function ProfileScreen() {
 
     mutate({
       profileId: selectedProfile.id,
-      householdId: selectedHouseholdId,
+      householdId: activeHouseholdId ?? null,
       name: nickname,
       avatar: avatarId,
       prevAvatar,
@@ -294,7 +275,7 @@ export default function ProfileScreen() {
             {AVATARS.map((a) => {
               const selected = a === avatarId;
               const takenByOther =
-                !!selectedHouseholdId &&
+                !!activeHouseholdId &&
                 !!(
                   usedAvatars?.has(a) &&
                   a !== (selectedProfile?.AvatarID as AvatarEmoji)
