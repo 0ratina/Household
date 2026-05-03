@@ -95,12 +95,11 @@ export default function taskOverview() {
                   </View>
                </View>
 
-               <View style={[styles.card, {padding: 14}]}>
+               <View style={styles.card}>
                   <View style={[styles.rowBetween, {marginBottom: 4}]}>
-                     <Text style={styles.rowLabel}>Värde:</Text>
+                     <Text style={styles.rowLabel}>Energivärde:</Text>
                      <Pill tone='muted' label={task?.value ?? '-'} />
                   </View>
-                  <Text style={styles.helper}>Hur energikrävande är sysslan?</Text>
                </View>
             </ScrollView>
 
@@ -180,6 +179,10 @@ const styles = StyleSheet.create({
    helper: {
       fontSize: 13,
       color: '#7A7A7A',
+   },
+   helperInset: {
+      paddingHorizontal: 16,
+      paddingBottom: 14,
    },
    pill: {
       minWidth: 28,
