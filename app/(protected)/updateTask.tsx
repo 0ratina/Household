@@ -214,12 +214,12 @@ export default function UpdateTaskScreen() {
                   </View>
                </View>
 
-               <View style={[styles.card, {padding: 14}]}>
+               <View style={styles.card}>
                   <View style={[styles.rowBetween, {marginBottom: 4}]}>
                      <Text style={styles.rowLabel}>Värde:</Text>
                      <Pill tone='muted' label={value} onPress={handleIncrementValue} />
                   </View>
-                  <Text style={styles.helper}>Hur energikrävande är sysslan?</Text>
+                  <Text style={[styles.helper, styles.helperInset]}>Hur energikrävande är sysslan?</Text>
                </View>
             </ScrollView>
          </KeyboardAvoidingView>
@@ -318,6 +318,11 @@ const styles = StyleSheet.create({
    helper: {
       fontSize: 13,
       color: '#7A7A7A',
+   },
+
+   helperInset: {
+      paddingHorizontal: 16,
+      paddingBottom: 14,
    },
 
    pill: {
